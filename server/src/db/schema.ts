@@ -1,3 +1,7 @@
-import { Users } from "../models/User";
+import { users } from "../models/User";
+const schema = {
+    users: users
+}
+export default schema;
 
-export { Users };
+export type AppSchema = typeof schema;
