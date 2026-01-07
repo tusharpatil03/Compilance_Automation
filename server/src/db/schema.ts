@@ -1,4 +1,4 @@
-import { users } from "../models/User";
+import { users } from "../modules/user/schema";
 const schema = {
     users: users
 }

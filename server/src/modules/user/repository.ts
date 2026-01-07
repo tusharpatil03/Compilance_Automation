@@ -1,21 +1,48 @@
-import { users } from "../models/User";
-import { BaseRepository } from "./BaseRepository";
-import { User, NewUser, IUserRepository, IUserQueryParameters } from "./Repositorty";
+import { users } from "./schema";
+import { BaseRepository } from "../../repositories/BaseRepository";
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 import { eq } from "drizzle-orm";
+import { WithPagination } from "../../repositories/Pagination";
 
-// Concrete repository for `users` table. It receives a typed Drizzle DB instance
-// (created at app bootstrap) and operates on the `users` table.
-export class UserRepository extends BaseRepository<typeof users, any> implements IUserRepository {
+// This replaces your manual 'interface IUser'
+export type User = typeof users.$inferSelect;
+
+// This is used for creating new users (automatically handles optional/default fields)
+export type NewUser = typeof users.$inferInsert;
+
+interface IQueryParameters {
+    limit?: number;
+    offset?: number;
+}
+
+// Make `where` optional so callers can request paginated lists without filters.
+export interface IUserQueryParameters extends IQueryParameters {
+    where?: { email?: string } | { id?: string };
+}
+
+export interface IUserRepository {
+    listUsers(): Promise<User[]>;
+    getUser(param: { where: { id: number } | { email: string } }): Promise<User | null>;
+    getUsers(params: IUserQueryParameters): Promise<User[]>;
+    createUser(payload: Partial<NewUser>): Promise<User>;
+    updateUser(id: number, payload: Partial<NewUser>): Promise<User>;
+    deleteUser(param: { where: { id?: number; email?: string } }): Promise<void>;
+}
+
+
+class UserRepositoryBase extends BaseRepository<typeof users, any> { };
+
+const UserRepositoryWithPagination = WithPagination(UserRepositoryBase);
+
+export class UserRepository extends UserRepositoryWithPagination implements IUserRepository {
     constructor(db: NodePgDatabase<any>) {
         super(db, users);
     }
 
-    async createUser(payload: Partial<NewUser>): Promise<User> {
+    async createUser(payload: NewUser): Promise<User> {
         const db = this.getDb();
-    // payload may be partial; cast to any to satisfy Drizzle overloads.
-    const [newUser] = await db.insert(users).values(payload as any).returning();
-    return newUser as unknown as User;
+        const [created] = await db.insert(users).values(payload as NewUser).returning();
+        return created as unknown as User;
     }
 
     async getUser(param: { where: { id?: number; email?: string } }): Promise<User | null> {
@@ -51,8 +78,8 @@ export class UserRepository extends BaseRepository<typeof users, any> implements
 
     async updateUser(id: number, payload: Partial<NewUser>): Promise<User> {
         const db = this.getDb();
-    const [updated] = await db.update(users).set(payload as any).where(eq(users.id, id)).returning();
-    return updated as unknown as User;
+        const [updated] = await db.update(users).set(payload as Partial<NewUser>).where(eq(users.id, id)).returning();
+        return updated as unknown as User;
     }
 
     async deleteUser(param: { where: { id?: number; email?: string } }): Promise<void> {
