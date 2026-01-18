@@ -17,12 +17,15 @@ interface IQueryParameters {
 
 // Make `where` optional so callers can request paginated lists without filters.
 export interface IUserQueryParameters extends IQueryParameters {
-    where?: { email?: string } | { id?: string };
+    where?: {
+        id?: number,
+        email?: string
+    }
 }
 
 export interface IUserRepository {
     listUsers(): Promise<User[]>;
-    getUser(param: { where: { id: number } | { email: string } }): Promise<User | null>;
+    getUserByEmail(param: { email: string }): Promise<User | null>;
     getUsers(params: IUserQueryParameters): Promise<User[]>;
     createUser(payload: Partial<NewUser>): Promise<User>;
     updateUser(id: number, payload: Partial<NewUser>): Promise<User>;
@@ -45,17 +48,23 @@ export class UserRepository extends UserRepositoryWithPagination implements IUse
         return created as unknown as User;
     }
 
-    async getUser(param: { where: { id?: number; email?: string } }): Promise<User | null> {
+    async getUserByEmail(param: { email: string }): Promise<User | null> {
         const db = this.getDb();
-        if (param.where.id) {
-            const user = await db.select().from(users).where(eq(users.id, param.where.id)).limit(1).execute();
-            return (user[0] ?? null) as unknown as User | null;
+        if (!param.email) {
+            return null;
         }
-        if (param.where.email) {
-            const user = await db.select().from(users).where(eq(users.email, param.where.email)).limit(1).execute();
+        try {
+            // Ensure limit is numeric to avoid driver/prepare mismatch
+            const user = await db.select().from(users).where(eq(users.email, param.email)).limit(1).execute();
             return (user[0] ?? null) as unknown as User | null;
+        } catch (err: any) {
+            // Re-throw with extra context to make runtime debugging easier
+            const message = `UserRepository.getUserByEmail failed for email=${param.email} - ${err?.message ?? err}`;
+            const e = new Error(message);
+            // attach original error for upstream logging
+            (e as any).cause = err;
+            throw e;
         }
-        return null;
     }
 
     async getUsers(params: IUserQueryParameters): Promise<User[]> {

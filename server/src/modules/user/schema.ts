@@ -5,6 +5,8 @@ export const users = pgTable("users", {
     tenant_id: integer().notNull(),
     external_customer_id: varchar().notNull(),
     email: varchar().notNull().unique(),
+    password: varchar().notNull(),
+    salt: varchar().notNull(),
     name: varchar().notNull(),
     phone: varchar().notNull(),
     role: varchar().notNull(),

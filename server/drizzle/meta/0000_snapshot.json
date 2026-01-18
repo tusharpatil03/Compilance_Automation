@@ -1,5 +1,5 @@
 {
-  "id": "4a377655-cb61-4a0e-a84c-9cf8b1c5c583",
+  "id": "1393bb8e-3a1a-48fe-9ebe-1ab9178ac448",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -25,21 +25,77 @@
             "cycle": false
           }
         },
-        "name": {
-          "name": "name",
-          "type": "varchar(255)",
+        "tenant_id": {
+          "name": "tenant_id",
+          "type": "integer",
           "primaryKey": false,
           "notNull": true
         },
-        "age": {
-          "name": "age",
-          "type": "integer",
+        "external_customer_id": {
+          "name": "external_customer_id",
+          "type": "varchar",
           "primaryKey": false,
           "notNull": true
         },
         "email": {
           "name": "email",
-          "type": "varchar(255)",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "password": {
+          "name": "password",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "salt": {
+          "name": "salt",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "phone": {
+          "name": "phone",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "role": {
+          "name": "role",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "risk_score": {
+          "name": "risk_score",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "status": {
+          "name": "status",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'active'"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "integer",
           "primaryKey": false,
           "notNull": true
         }
