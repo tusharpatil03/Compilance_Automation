@@ -1,6 +1,15 @@
 //use private axios instance with interceptors to attach access token to request headers
 import axios from 'axios';
-import { getFromLocalStorage } from '../utils/storage';
+
+let accessToken: string | null = null;
+
+export const setAccessToken = (token: string | null) => {
+    accessToken = token;
+};
+
+export const isAuthenticated = (): boolean => {
+    return accessToken !== null;
+};
 
 export const axiosProtected = axios.create({
     baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api',
@@ -11,9 +20,8 @@ export const axiosProtected = axios.create({
 
 axiosProtected.interceptors.request.use(
     (config) => {
-        const token = getFromLocalStorage('access_token');
-        if (token && config.headers) {
-            config.headers['Authorization'] = `Bearer ${token}`;
+        if (accessToken && config.headers) {
+            config.headers['Authorization'] = `Bearer ${accessToken}`;
         }
         return config;
     },

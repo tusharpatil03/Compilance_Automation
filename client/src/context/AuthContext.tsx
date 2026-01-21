@@ -1,5 +1,5 @@
 // src/contexts/AuthContext.tsx
-import { createContext, useState, type ReactNode } from "react";
+import { createContext, useState, type Dispatch, type ReactNode, type SetStateAction } from "react";
 
 export interface User {
   id: string;
@@ -9,9 +9,7 @@ export interface User {
 
 export interface AuthContextValue {
   user: User | null;
-  isAuthenticated: boolean;
-  login: (user: User) => void;
-  logout: () => void;
+  setUser: Dispatch<SetStateAction<User | null>>;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(
@@ -21,19 +19,10 @@ const AuthContext = createContext<AuthContextValue | undefined>(
 export function AuthProvider(children: ReactNode) {
   const [user, setUser] = useState<User | null>(null);
 
-  const login = (user: User) => {
-    setUser(user);
-  };
-
-  const logout = () => {
-    setUser(null);
-  };
 
   const value: AuthContextValue = {
     user,
-    isAuthenticated: user !== null,
-    login,
-    logout,
+    setUser
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
