@@ -10,17 +10,8 @@ class AuthController {
     
     async register(req:Request, res:Response): Promise<void> {
         const payload: NewUser = req.body;
-        const user = await this.authService.registerUser(payload);
+        const user = await this.authService.addCustomer(payload);
         res.send(user);
-    }
-
-    async login(req: Request, res: Response): Promise<void>{
-        const {email, password} = req.body;
-        const user = await this.authService.authenticateUser(email, password);
-        if(!user){
-            throw new Error("Invalid email or password");
-        }
-        res.send("hello");
     }
 }
 

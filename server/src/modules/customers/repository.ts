@@ -15,21 +15,14 @@ interface IQueryParameters {
     offset?: number;
 }
 
-// Make `where` optional so callers can request paginated lists without filters.
-export interface IUserQueryParameters extends IQueryParameters {
-    where?: {
-        id?: number,
-        email?: string
-    }
-}
 
 export interface IUserRepository {
     listUsers(): Promise<User[]>;
-    getUserByEmail(param: { email: string }): Promise<User | null>;
-    getUsers(params: IUserQueryParameters): Promise<User[]>;
+    getUserById(param: { id: string }): Promise<User | null>;
+    getUsers(params: IQueryParameters): Promise<User[]>;
     createUser(payload: Partial<NewUser>): Promise<User>;
     updateUser(id: number, payload: Partial<NewUser>): Promise<User>;
-    deleteUser(param: { where: { id?: number; email?: string } }): Promise<void>;
+    deleteUserById(id: number): Promise<void>;
 }
 
 
@@ -48,18 +41,18 @@ export class UserRepository extends UserRepositoryWithPagination implements IUse
         return created as unknown as User;
     }
 
-    async getUserByEmail(param: { email: string }): Promise<User | null> {
+    async getUserById(param: { id: string }): Promise<User | null> {
         const db = this.getDb();
-        if (!param.email) {
+        if (!param.id) {
             return null;
         }
         try {
             // Ensure limit is numeric to avoid driver/prepare mismatch
-            const user = await db.select().from(users).where(eq(users.email, param.email)).limit(1).execute();
+            const user = await db.select().from(users).where(eq(users.external_customer_id, param.id)).limit(1).execute();
             return (user[0] ?? null) as unknown as User | null;
         } catch (err: any) {
             // Re-throw with extra context to make runtime debugging easier
-            const message = `UserRepository.getUserByEmail failed for email=${param.email} - ${err?.message ?? err}`;
+            const message = `UserRepository.getUserByEmail failed for email=${param.id} - ${err?.message ?? err}`;
             const e = new Error(message);
             // attach original error for upstream logging
             (e as any).cause = err;
@@ -67,14 +60,10 @@ export class UserRepository extends UserRepositoryWithPagination implements IUse
         }
     }
 
-    async getUsers(params: IUserQueryParameters): Promise<User[]> {
+    async getUsers(params: IQueryParameters): Promise<User[]> {
         const db = this.getDb();
         const limit = params.limit ?? this.defaultLimit;
         const offset = params.offset ?? this.defaultOffset;
-        if (params.where && "email" in params.where && params.where.email) {
-            const list = await db.select().from(users).where(eq(users.email, params.where.email)).limit(limit).offset(offset).execute();
-            return list as unknown as User[];
-        }
         const list = await db.select().from(users).limit(limit).offset(offset).execute();
         return list as unknown as User[];
     }
@@ -91,15 +80,9 @@ export class UserRepository extends UserRepositoryWithPagination implements IUse
         return updated as unknown as User;
     }
 
-    async deleteUser(param: { where: { id?: number; email?: string } }): Promise<void> {
+    async deleteUserById(id:number): Promise<void> {
         const db = this.getDb();
-        if (param.where.id) {
-            await db.delete(users).where(eq(users.id, param.where.id)).execute();
-            return;
-        }
-        if (param.where.email) {
-            await db.delete(users).where(eq(users.email, param.where.email)).execute();
-            return;
-        }
+        await db.delete(users).where(eq(users.id, id)).execute();
+        return;
     }
 }
