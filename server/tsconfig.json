@@ -1,0 +1,32 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "commonjs",
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true, //automatically enables if esModuleInterop is true
+
+    // Enable JavaScript file support
+    "allowJs": true,
+
+    "types": ["node", "jest", "@types/jest"],
+
+    "outDir": "./dist",
+
+    //language features
+    "strict": true,
+    "noUncheckedIndexedAccess": true, //prevents accessing an array element that may not exist
+    "noImplicitAny": true, //prevents variables from being implicitly typed as 'any'
+    "noImplicitThis": true, //prevents 'this' from being implicitly typed as 'any'
+    "strictNullChecks": true, //ensures null and undefined are only assignable to themselves and any
+    "noFallthroughCasesInSwitch": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+
+    "incremental": true, //faster subsequent builds
+    "sourceMap": true, //essesntial for debugging
+    "removeComments": true
+  },
+  "include": ["src/**/*", "drizzle.config.ts"],
+  "exclude": ["node_modules", "dist"]
+}
