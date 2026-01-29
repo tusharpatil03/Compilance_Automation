@@ -7,7 +7,7 @@ import { jest, expect } from '@jest/globals';
 
 // Set test environment variables
 process.env.NODE_ENV = 'test';
-process.env.ACESS_TOKEN_SECRET = 'test-secret-key-min-32-chars-long-for-jwt-testing';
+process.env.ACCESS_TOKEN_SECRET = 'test-secret-key-min-32-chars-long-for-jwt-testing';
 process.env.DATABASE_URL = 'postgresql://test:test@localhost:5432/test_db';
 
 // Global test timeout
