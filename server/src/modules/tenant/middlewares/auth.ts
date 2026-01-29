@@ -36,7 +36,7 @@ export const authenticateTenant = async (
         const token = authHeader.substring(7); // Remove "Bearer " prefix
 
         // Get JWT secret from environment
-        const secretKey = process.env.ACESS_TOKEN_SECRET;
+        const secretKey = process.env.ACCESS_TOKEN_SECRET;
         
         if (!secretKey) {
             console.error("JWT secret key is not defined in environment variables");

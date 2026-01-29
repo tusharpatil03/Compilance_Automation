@@ -163,7 +163,7 @@ CREATE TYPE key_environment AS ENUM ('production', 'staging', 'development');
 - **Algorithm**: HS256 (HMAC with SHA-256)
 - **Expiration**: 1 hour (configurable)
 - **Payload**: `{ id, email }`
-- **Secret**: Stored in environment variable `ACESS_TOKEN_SECRET`
+- **Secret**: Stored in environment variable `ACCESS_TOKEN_SECRET`
 
 ### Response Sanitization
 - Passwords and salts are never included in API responses
@@ -211,7 +211,7 @@ router.post('/api-keys', authenticateTenant, async (req: AuthenticatedRequest, r
 Required environment variables:
 ```env
 DATABASE_URL=postgresql://user:password@localhost:5432/db_name
-ACESS_TOKEN_SECRET=your_secret_key_here_min_32_chars
+ACCESS_TOKEN_SECRET=your_secret_key_here_min_32_chars
 ```
 
 ## Future Enhancements
@@ -300,7 +300,7 @@ pnpm run db:status
 ### Common Issues
 
 **Issue**: "JWT secret key is not defined"
-- **Solution**: Set `ACESS_TOKEN_SECRET` in your `.env` file
+- **Solution**: Set `ACCESS_TOKEN_SECRET` in your `.env` file
 
 **Issue**: "Tenant already exists with this email"
 - **Solution**: Use a different email or delete existing tenant from database

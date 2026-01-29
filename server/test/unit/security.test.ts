@@ -248,7 +248,7 @@ describe('Security Utils - JWT Token Generation', () => {
 
     it('should be verifiable with correct secret', () => {
       const token = generateJWTToken(validPayload);
-      const secret = process.env.ACESS_TOKEN_SECRET!;
+      const secret = process.env.ACCESS_TOKEN_SECRET!;
 
       expect(() => {
         jwt.verify(token, secret);
@@ -265,15 +265,15 @@ describe('Security Utils - JWT Token Generation', () => {
     });
 
     it('should throw error if JWT secret is not defined', () => {
-      const originalSecret = process.env.ACESS_TOKEN_SECRET;
-      delete process.env.ACESS_TOKEN_SECRET;
+      const originalSecret = process.env.ACCESS_TOKEN_SECRET;
+      delete process.env.ACCESS_TOKEN_SECRET;
 
       expect(() => {
         generateJWTToken(validPayload);
       }).toThrow('JWT secret key is not defined');
 
       // Restore secret
-      process.env.ACESS_TOKEN_SECRET = originalSecret;
+      process.env.ACCESS_TOKEN_SECRET = originalSecret;
     });
 
     it('should generate different tokens for different payloads', () => {
@@ -338,7 +338,7 @@ describe('Security Utils - Integration Tests', () => {
 
   it('should support full JWT lifecycle', () => {
     const payload: JWTPayload = { id: 789, email: 'jwt@test.com' };
-    const secret = process.env.ACESS_TOKEN_SECRET!;
+    const secret = process.env.ACCESS_TOKEN_SECRET!;
     
     // 1. Generate token
     const token = generateJWTToken(payload);

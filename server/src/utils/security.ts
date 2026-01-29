@@ -35,7 +35,7 @@ export type JWTPayload = {
 }
 
 export const generateJWTToken = (JWTPayload: JWTPayload): string => {
-    const secretKey = process.env.ACESS_TOKEN_SECRET;
+    const secretKey = process.env.ACCESS_TOKEN_SECRET;
     if (!secretKey) {
         throw new Error("JWT secret key is not defined in environment variables");
     }
