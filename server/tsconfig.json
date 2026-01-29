@@ -9,6 +9,8 @@
     // Enable JavaScript file support
     "allowJs": true,
 
+    "types": ["node", "jest", "@types/jest"],
+
     "outDir": "./dist",
 
     //language features
