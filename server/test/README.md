@@ -8,6 +8,11 @@ This directory contains the test suite for the Compilance Automation server proj
 test/
 ├── unit/                    # Unit tests
 │   ├── security.test.ts     # Security utilities tests
+│   ├── services/            # Service layer tests
+│   │   └── authService.test.ts
+│   ├── controllers/         # Controller tests
+│   │   ├── registerController.test.ts
+│   │   └── loginController.test.ts
 │   └── repositories/        # Repository tests
 │       └── tenantRepository.test.ts
 ├── helpers/                 # Test helper functions
@@ -168,6 +173,57 @@ The `MockTenantRepository` provides additional test utilities:
 - `seed(tenants)` - Populate with initial data
 - `getAllTenants()` - Get all stored tenants
 
+### Mocking Services and External Dependencies
+
+For controller tests, mock external dependencies using Jest:
+
+```typescript
+// Mock database connection
+jest.mock('../../../src/db/connection', () => ({
+  db: {},
+}));
+
+// Mock service classes
+jest.mock('../../../src/modules/tenant/services/AuthService');
+
+describe('Controller Test', () => {
+  let mockRequest: Partial<Request>;
+  let mockResponse: Partial<Response>;
+  let mockJson: jest.Mock;
+  let mockStatus: jest.Mock;
+
+  beforeEach(() => {
+    mockJson = jest.fn();
+    mockStatus = jest.fn().mockReturnValue({ json: mockJson });
+    
+    mockRequest = { body: {} };
+    mockResponse = {
+      status: mockStatus,
+      json: mockJson,
+    };
+
+    jest.clearAllMocks();
+  });
+
+  it('should handle request', async () => {
+    // Mock service method
+    const mockMethod = jest.fn().mockResolvedValue({ data: 'test' });
+    (AuthService as jest.MockedClass<typeof AuthService>).mockImplementation(() => ({
+      method: mockMethod,
+    } as any));
+
+    // Test controller
+    await controller(mockRequest as Request, mockResponse as Response);
+
+    // Verify response
+    expect(mockStatus).toHaveBeenCalledWith(200);
+    expect(mockJson).toHaveBeenCalledWith(expect.objectContaining({
+      success: true,
+    }));
+  });
+});
+```
+
 ## Testing Best Practices
 
 ### 1. Test Isolation
@@ -252,6 +308,46 @@ open coverage/lcov-report/index.html
 ### Security Utils Tests
 Located in `test/unit/security.test.ts`, covers:
 - Password hashing with salt generation
+- Password comparison
+- API key generation (uniqueness, URL-safe)
+- API key hashing (bcrypt format)
+- JWT token generation and verification
+
+### AuthService Tests
+Located in `test/unit/services/authService.test.ts`, covers:
+- **registerTenant**: New tenant registration with password hashing, JWT generation, duplicate email checks, status validation
+- **loginTenant**: Authentication with credential verification, account status checks, JWT token generation
+- **sanitizeTenantResponse**: Removing sensitive fields (password, salt) from responses
+- **Integration scenarios**: Complete registration → login flows, duplicate prevention, status-based access control
+
+**Test Coverage:** 40+ test cases covering success paths, error handling, edge cases, and integration flows
+
+### Controller Tests
+
+#### Register Controller
+Located in `test/unit/controllers/registerController.test.ts`, covers:
+- HTTP 201 response with tenant data and JWT token
+- Proper request/response handling
+- Error scenarios: duplicate tenants (409), general errors (500)
+- Response structure validation (success, message, data fields)
+- Auth object structure (accessToken, tokenType, expiresIn)
+- Logging and error handling
+
+**Test Coverage:** 15+ test cases for HTTP layer testing
+
+#### Login Controller
+Located in `test/unit/controllers/loginController.test.ts`, covers:
+- HTTP 200 response for successful authentication
+- HTTP 401 for invalid credentials
+- HTTP 403 for inactive/suspended accounts
+- HTTP 500 for server errors
+- Request validation and parameter passing
+- Response structure consistency
+- Edge cases: missing email/password, empty request body
+
+**Test Coverage:** 20+ test cases for authentication flow testing
+
+### Repository Tests
 - Password comparison
 - API key generation (uniqueness, URL-safe)
 - API key hashing (bcrypt format)

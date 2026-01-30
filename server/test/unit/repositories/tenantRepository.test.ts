@@ -6,7 +6,7 @@ import {describe, it, expect, beforeEach, afterEach} from '@jest/globals';
 import { MockTenantRepository } from '../../mocks/mockTenantRepository';
 import { NewTenant, Tenant } from '../../../src/modules/tenant/schema';
 import { randomEmail, generateStrongPassword } from '../../helpers/testHelpers';
-import { hashPasword } from '../../../src/utils/security';
+import { hashPassword } from '../../../src/utils/security';
 
 describe('TenantRepository', () => {
   let repository: MockTenantRepository;
@@ -24,7 +24,7 @@ describe('TenantRepository', () => {
       // Arrange
       const email = randomEmail();
       const password = generateStrongPassword();
-      const { hashedPassword, salt } = hashPasword(password);
+      const { hashedPassword, salt } = hashPassword(password);
       
       const newTenant: NewTenant = {
         name: 'Test Tenant',

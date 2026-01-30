@@ -1,5 +1,5 @@
 import { TenantRepository } from "../respository";
-import { hashPasword, comparePassword, generateJWTToken } from "../../../utils/security";
+import * as security from "../../../utils/security";
 import { Tenant, NewTenant } from "../schema";
 import { TenantRegisterInput, TenantLoginInput, TenantResponse } from "../zodSchema";
 
@@ -23,7 +23,7 @@ export class AuthService {
         }
 
         // Hash password with salt
-        const { hashedPassword, salt } = hashPasword(payload.password);
+        const { hashedPassword, salt } = security.hashPassword(payload.password);
 
         // Create tenant with hashed credentials
         const newTenant: Partial<NewTenant> = {
@@ -39,7 +39,7 @@ export class AuthService {
         const tenant = await this.tenantRepository.createTenant(newTenant as NewTenant);
 
         // Generate JWT token for immediate authentication
-        const token = generateJWTToken({
+        const token = security.generateJWTToken({
             id: tenant.id,
             email: tenant.email,
         });
@@ -70,14 +70,14 @@ export class AuthService {
         }
 
         // Verify password
-        const isPasswordValid = comparePassword(payload.password, tenant.password, tenant.salt);
+        const isPasswordValid = security.comparePassword(payload.password, tenant.password, tenant.salt);
 
         if (!isPasswordValid) {
             throw new Error("Invalid email or password");
         }
 
         // Generate JWT token
-        const token = generateJWTToken({
+        const token = security.generateJWTToken({
             id: tenant.id,
             email: tenant.email,
         });

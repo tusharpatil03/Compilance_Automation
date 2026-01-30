@@ -1,12 +1,8 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 
-type HashPayLoad = {
-    password: string,
-    salt?: string
-}
 
-export const hashPasword = (password: string, salt?: string): { hashedPassword: string, salt: string } => {
+export const hashPassword = (password: string, salt?: string): { hashedPassword: string, salt: string } => {
     if (!salt) {
         salt = bcrypt.genSaltSync(10);
     }

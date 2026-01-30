@@ -9,7 +9,7 @@
 import { describe, it, expect } from '@jest/globals';
 
 import {
-  hashPasword,
+  hashPassword,
   comparePassword,
   generateApiKey,
   hashApiKey,
@@ -19,10 +19,10 @@ import {
 import jwt from 'jsonwebtoken';
 
 describe('Security Utils - Password Hashing', () => {
-  describe('hashPasword', () => {
+  describe('hashPassword', () => {
     it('should return hashed password and salt', () => {
       const password = 'SecurePass123!';
-      const result = hashPasword(password);
+      const result = hashPassword(password);
 
       expect(result).toHaveProperty('hashedPassword');
       expect(result).toHaveProperty('salt');
@@ -34,8 +34,8 @@ describe('Security Utils - Password Hashing', () => {
 
     it('should generate different salts for same password', () => {
       const password = 'TestPassword123!';
-      const result1 = hashPasword(password);
-      const result2 = hashPasword(password);
+      const result1 = hashPassword(password);
+      const result2 = hashPassword(password);
 
       // Different salts should produce different hashes
       expect(result1.salt).not.toBe(result2.salt);
@@ -46,8 +46,8 @@ describe('Security Utils - Password Hashing', () => {
       const password = 'MyPassword123!';
       const customSalt = '$2a$10$abcdefghijklmnopqrstuv';
       
-      const result1 = hashPasword(password, customSalt);
-      const result2 = hashPasword(password, customSalt);
+      const result1 = hashPassword(password, customSalt);
+      const result2 = hashPassword(password, customSalt);
 
       // Same password + same salt = same hash
       expect(result1.salt).toBe(customSalt);
@@ -56,7 +56,7 @@ describe('Security Utils - Password Hashing', () => {
     });
 
     it('should handle empty password', () => {
-      const result = hashPasword('');
+      const result = hashPassword('');
       
       expect(result.hashedPassword).toBeDefined();
       expect(result.salt).toBeDefined();
@@ -64,7 +64,7 @@ describe('Security Utils - Password Hashing', () => {
 
     it('should handle very long passwords', () => {
       const longPassword = 'a'.repeat(100);
-      const result = hashPasword(longPassword);
+      const result = hashPassword(longPassword);
 
       expect(result.hashedPassword).toBeDefined();
       expect(result.salt).toBeDefined();
@@ -72,7 +72,7 @@ describe('Security Utils - Password Hashing', () => {
 
     it('should handle special characters in password', () => {
       const specialPassword = '!@#$%^&*()_+-=[]{}|;:\'",.<>?/`~';
-      const result = hashPasword(specialPassword);
+      const result = hashPassword(specialPassword);
 
       expect(result.hashedPassword).toBeDefined();
       expect(result.salt).toBeDefined();
@@ -82,7 +82,7 @@ describe('Security Utils - Password Hashing', () => {
   describe('comparePassword', () => {
     it('should return true for matching password', () => {
       const password = 'CorrectPassword123!';
-      const { hashedPassword, salt } = hashPasword(password);
+      const { hashedPassword, salt } = hashPassword(password);
 
       const result = comparePassword(password, hashedPassword, salt);
 
@@ -92,7 +92,7 @@ describe('Security Utils - Password Hashing', () => {
     it('should return false for incorrect password', () => {
       const correctPassword = 'CorrectPassword123!';
       const wrongPassword = 'WrongPassword456!';
-      const { hashedPassword, salt } = hashPasword(correctPassword);
+      const { hashedPassword, salt } = hashPassword(correctPassword);
 
       const result = comparePassword(wrongPassword, hashedPassword, salt);
 
@@ -101,7 +101,7 @@ describe('Security Utils - Password Hashing', () => {
 
     it('should return false for empty password', () => {
       const password = 'ValidPassword123!';
-      const { hashedPassword, salt } = hashPasword(password);
+      const { hashedPassword, salt } = hashPassword(password);
 
       const result = comparePassword('', hashedPassword, salt);
 
@@ -110,7 +110,7 @@ describe('Security Utils - Password Hashing', () => {
 
     it('should return false with wrong salt', () => {
       const password = 'TestPassword123!';
-      const { hashedPassword } = hashPasword(password);
+      const { hashedPassword } = hashPassword(password);
       const wrongSalt = '$2a$10$wrongsaltwrongsaltwrong';
 
       const result = comparePassword(password, hashedPassword, wrongSalt);
@@ -120,7 +120,7 @@ describe('Security Utils - Password Hashing', () => {
 
     it('should be case sensitive', () => {
       const password = 'CaseSensitive123!';
-      const { hashedPassword, salt } = hashPasword(password);
+      const { hashedPassword, salt } = hashPassword(password);
 
       const resultLower = comparePassword('casesensitive123!', hashedPassword, salt);
       const resultUpper = comparePassword('CASESENSITIVE123!', hashedPassword, salt);
@@ -314,7 +314,7 @@ describe('Security Utils - Integration Tests', () => {
     const originalPassword = 'UserPassword123!';
     
     // 1. Hash password
-    const { hashedPassword, salt } = hashPasword(originalPassword);
+    const { hashedPassword, salt } = hashPassword(originalPassword);
     
     // 2. Verify correct password
     const isValid = comparePassword(originalPassword, hashedPassword, salt);
