@@ -20,6 +20,12 @@ export class BaseRepository<T extends PgTable, DB extends Record<string, unknown
     protected getDb() {
         return this.db;
     }
+
+    protected normalizePagination(options?: { limit?: number; offset?: number }) {
+        const limit = Math.min(Math.max(options?.limit ?? this.defaultLimit, 1), 100);
+        const offset = Math.max(options?.offset ?? this.defaultOffset, 0);
+        return { limit, offset };
+    }
 }
 
 export type Constructor<T = {}> = new (...args: any[]) => T;

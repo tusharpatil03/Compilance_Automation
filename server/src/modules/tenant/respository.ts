@@ -126,4 +126,20 @@ export class TenantAPIKeyRepository extends TenantApiKeyRepositoryBase implement
             .execute();
         return apiKeys;
     }
+
+    async getApiKeysByTenantIdPaginated(
+        tenantId: number,
+        options?: { limit?: number; offset?: number }
+    ): Promise<NewTenantApiKey[]> {
+        const db = this.getDb();
+        const { limit, offset } = this.normalizePagination(options);
+        const apiKeys = await db
+            .select()
+            .from(this.table)
+            .where(eq(this.table.tenant_id, tenantId))
+            .limit(limit)
+            .offset(offset)
+            .execute();
+        return apiKeys as unknown as NewTenantApiKey[];
+    }
 }

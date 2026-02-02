@@ -78,10 +78,6 @@ export class TenantApiServices implements ITenantApiServices {
     }
 
     async listApiKeys(tenantId: number, options?: { limit?: number; offset?: number }): Promise<NewTenantApiKey[]> {
-        const limit = Math.min(Math.max(options?.limit ?? 50, 1), 100);
-        const offset = Math.max(options?.offset ?? 0, 0);
-        // Currently repository does not support pagination; fetch all then slice to avoid scope creep
-        const apiKeys = await this.tenantApiKeyRepository.getApiKeysByTenantId(tenantId);
-        return apiKeys.slice(offset, offset + limit);
+        return this.tenantApiKeyRepository.getApiKeysByTenantIdPaginated(tenantId, options);
     }
 }
