@@ -4,7 +4,6 @@ import { ZodSchema } from "zod";
 export const validagteBody =
     <T>(schema: ZodSchema<T>) =>
         (req: Request, res: Response, next: NextFunction) => {
-            console.log(req.baseUrl);
             const result = schema.safeParse(req.body);
             if (!result.success) {
                 return res.status(400).json({

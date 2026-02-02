@@ -1,11 +1,8 @@
 // tenant model schema
-import { pgEnum, integer, pgTable, varchar, AnyPgColumn, timestamp } from "drizzle-orm/pg-core";
+import { pgEnum, integer, pgTable, varchar, AnyPgColumn, timestamp, uniqueIndex, index } from "drizzle-orm/pg-core";
 
 // Status used for tenants and keys
 export const TenantStatus = pgEnum("tenant_status", ["active", "inactive", "suspended"]);
-
-// Environments for API keys to support staging/prod separation
-export const KeyEnvironment = pgEnum("key_environment", ["production", "staging", "development"]);
 
 export const tenants = pgTable("tenants", {
     id: integer().primaryKey().generatedAlwaysAsIdentity(),
@@ -23,7 +20,7 @@ export type Tenant = typeof tenants.$inferSelect;
 export type NewTenant = typeof tenants.$inferInsert;
 
 // API keys table - supports multiple keys per tenant, hashed storage, rotation and revocation
-export const tenants_api_keys = pgTable("tenants_api_keys", {
+export const tenants_api_key = pgTable("tenants_api_keys", {
     // surrogate primary key for the key record
     id: integer().primaryKey().generatedAlwaysAsIdentity(),
     
@@ -33,28 +30,24 @@ export const tenants_api_keys = pgTable("tenants_api_keys", {
     // hashed key material - never store raw keys
     api_key_hash: varchar({ length: 512 }).notNull(),
     label: varchar({ length: 255 }).default(""),
-    environment: KeyEnvironment("environment").notNull().default("production"),
     status: TenantStatus("status").notNull().default("active"),
     
     created_at: timestamp({ mode: "string" }).notNull().defaultNow(),
+    updated_at: timestamp({ mode: "string" }).notNull().defaultNow(),
     last_used_at: timestamp({ mode: "string" }),
     expires_at: timestamp({ mode: "string" }),
     revoked_at: timestamp({ mode: "string" }),
-    rotated_from_key_id: integer().references((): AnyPgColumn => tenants_api_keys.id),
+    rotated_from_key_id: integer().references((): AnyPgColumn => tenants_api_key.id),
+}, (table) => {
+    return {
+        // Ensure each kid is unique globally
+        kidUniqueIdx: uniqueIndex("ux_tenantapikey_kid").on(table.kid),
+        // Speed up lookups by tenant and common filters
+        tenantIdx: index("ix_tenantapikey_tenant").on(table.tenant_id),
+        tenantStatusIdx: index("ix_tenantapikey_tenant_status").on(table.tenant_id, table.status),
+        expiresIdx: index("ix_tenantapikey_expires").on(table.expires_at),
+    };
 });
 
-export type TenantApiKey = typeof tenants_api_keys.$inferSelect;
-export type NewTenantApiKey = typeof tenants_api_keys.$inferInsert;
-
-// // events / audit log for API key lifecycle changes - provides auditability and immutability
-// export const tenants_api_key_events = pgTable("tenants_api_key_events", {
-//     id: integer().primaryKey().generatedAlwaysAsIdentity(),
-//     tenant_id: integer().notNull().references((): AnyPgColumn => tenants.id),
-//     api_key_id: integer().notNull().references((): AnyPgColumn => tenants_api_keys.id),
-//     event_type: varchar({ length: 64 }).notNull(), // e.g. created, rotated, revoked, used
-//     event_meta: varchar({ length: 2048 }).default(""), // optional JSON string or metadata
-//     created_at: timestamp({ mode: "string" }).notNull().defaultNow(),
-//     actor_id: varchar({ length: 128 }).default(""), // system or user id that triggered change
-// });
-
-// export type TenantApiKeyEvent = typeof tenants_api_key_events.$inferSelect;
+export type TenantApiKey = typeof tenants_api_key.$inferSelect;
+export type NewTenantApiKey = typeof tenants_api_key.$inferInsert;

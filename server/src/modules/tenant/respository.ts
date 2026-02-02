@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import { BaseRepository } from "../../repositories/BaseRepository";
-import { tenants } from "./schema";
+import { tenants, tenants_api_key } from "./schema";
 import { Tenant, NewTenant, NewTenantApiKey } from "./schema";
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 
@@ -69,7 +69,61 @@ export class TenantRepository extends TenantRepositoryBase implements ITenantRep
 // the API key generation feature in a future iteration
 interface ITenantApiKeyRepository {
     createApiKey(payload: NewTenantApiKey): Promise<NewTenantApiKey>;
-    updateApiKey(id: number, payload: Partial<NewTenantApiKey>): Promise<NewTenantApiKey>;
-    deactivateApiKey(id: number): Promise<void>;
-    removeApiKey(id: number): Promise<void>;
+    updateApiKey(kid: string, payload: Partial<NewTenantApiKey>): Promise<NewTenantApiKey>;
+    deactivateApiKey(kid: string): Promise<void>;
+    removeApiKey(kid: string): Promise<void>;
+}
+
+class TenantApiKeyRepositoryBase extends BaseRepository<typeof tenants_api_key, any> { };
+export class TenantAPIKeyRepository extends TenantApiKeyRepositoryBase implements ITenantApiKeyRepository {
+    constructor(db: NodePgDatabase<any>) {
+        super(db, tenants_api_key);
+    }
+    async createApiKey(payload: NewTenantApiKey): Promise<NewTenantApiKey> {
+        const db = this.getDb();
+        return db.insert(this.table).values(payload).returning().then(([created]) => created as unknown as NewTenantApiKey);
+    };
+    async updateApiKey(kid: string, payload: Partial<NewTenantApiKey>): Promise<NewTenantApiKey> {
+        const db = this.getDb();
+        const [updated] = await db
+            .update(this.table)
+            .set({ ...payload, updated_at: new Date().toISOString() })
+            .where(eq(this.table.kid, kid))
+            .returning();
+        return updated as unknown as NewTenantApiKey;
+    };
+    async deactivateApiKey(kid: string): Promise<void> {
+        const db = this.getDb();
+        await db
+            .update(this.table)
+            .set({ status: "inactive", updated_at: new Date().toISOString() })
+            .where(eq(this.table.kid, kid));
+    };
+    async removeApiKey(kid: string): Promise<void> {
+        const db = this.getDb();
+        await db
+            .delete(this.table)
+            .where(eq(this.table.kid, kid));
+    }
+
+    async getApiKeyByKid(kid: string): Promise<NewTenantApiKey | null> {
+        const db = this.getDb();
+        const apiKey = await db
+            .select()
+            .from(this.table)
+            .where(eq(this.table.kid, kid))
+            .limit(1)
+            .execute();
+        return (apiKey[0] ?? null) as unknown as NewTenantApiKey | null;
+    }
+
+    async getApiKeysByTenantId(tenantId: number): Promise<NewTenantApiKey[]> {
+        const db = this.getDb();
+        const apiKeys = await db
+            .select()
+            .from(this.table)
+            .where(eq(this.table.tenant_id, tenantId))
+            .execute();
+        return apiKeys;
+    }
 }

@@ -46,3 +46,15 @@ export const tenantResponseSchema = z.object({
 export type TenantRegisterInput = z.infer<typeof tenantRegisterSchema>;
 export type TenantLoginInput = z.infer<typeof tenantLoginSchema>;
 export type TenantResponse = z.infer<typeof tenantResponseSchema>;
+
+export const tenantApiKeyCreateSchema = z.object({
+    tenant_id: z.number().min(1, "Valid tenant ID is required").optional(),
+    label: z.string().max(255).optional(),
+    expires_at: z.string().optional(), // ISO timestamp string
+});
+
+export const tenanatApiKeyChangeSchema = z.object({
+    status: z.union([z.literal("active"), z.literal("inactive")]),
+});
+
+export type TenantApiKeyCreateInput = z.infer<typeof tenantApiKeyCreateSchema>;

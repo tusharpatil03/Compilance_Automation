@@ -2,9 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import { JWTPayload } from "../../../utils/security";
 
-/**
- * Extended Request interface to include authenticated tenant data
- */
+// extended Request interface to include authenticated tenant data
 export interface AuthenticatedRequest extends Request {
     tenant?: JWTPayload;
 }
@@ -12,9 +10,6 @@ export interface AuthenticatedRequest extends Request {
 /**
  * Middleware to authenticate tenant using JWT token
  * Validates Bearer token from Authorization header
- * 
- * Usage: Apply to protected routes that require tenant authentication
- * Example: router.get("/api-keys", authenticateTenant, getApiKeys);
  */
 export const authenticateTenant = async (
     req: AuthenticatedRequest,
@@ -97,8 +92,5 @@ export const requireActiveTenant = (
         });
         return;
     }
-
-    // Additional status checks can be added here by querying the database
-    // For now, we assume the token is valid = tenant is active
     next();
 };
