@@ -1,6 +1,7 @@
 import { useAuth } from "../../features/auth/hooks/useAuth";
 import { Button } from "../../components/UI/Button";
 import styles from './DashBoard.module.css';
+import { Link } from 'react-router-dom';
 
 function DashBoard() {
   const { tenant, logout } = useAuth();
@@ -14,9 +15,12 @@ function DashBoard() {
     <div className={styles.container}>
       <div className={styles.header}>
         <h1 className={styles.title}>Dashboard</h1>
-        <Button onClick={handleLogout} variant="outline">
-          Logout
-        </Button>
+        <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+          <Link to="/api-keys" style={{ color: '#3b82f6', textDecoration: 'none', fontWeight: 500 }}>API Management</Link>
+          <Button onClick={handleLogout} variant="outline">
+            Logout
+          </Button>
+        </div>
       </div>
 
       <div className={styles.content}>
