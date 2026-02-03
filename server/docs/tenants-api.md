@@ -279,3 +279,145 @@ const login = (payload: LoginRequest) =>
 
 - Create an OpenAPI / Swagger spec for these endpoints to generate client code or import into Postman.
 - Add example curl commands and security guidance for production deployments.
+
+---
+
+## Tenant API Keys
+
+These endpoints manage tenant-scoped API keys. All endpoints below are protected and require an Authorization header with a valid tenant JWT: `Authorization: Bearer <token>`.
+
+Base path: `/api/tenants` (adjust to your server mounting point). The examples below assume routes are mounted under that base path.
+
+### 3) Create API Key
+
+- URL: POST /api/tenants/api-keys
+- Description: Creates a new API key for the authenticated tenant. The raw API key is returned only once at creation time; the server stores only a hash.
+- Content-Type: application/json
+
+Request body (JSON):
+
+```json
+{
+  "label": "string (optional)",
+  "expires_at": "ISO timestamp string (optional)",
+  "tenant_id": "number (optional; ignored when authenticated)"
+}
+```
+
+Success response (201 Created):
+
+```json
+{
+  "message": "API key created successfully",
+  "api_key": "<raw-api-key-string>",
+  "key": {
+    "id": 123,
+    "tenant_id": 1,
+    "kid": "kid_...",
+    "label": "optional label",
+    "status": "active",
+    "created_at": "2026-01-30T12:00:00.000Z",
+    "updated_at": "2026-01-30T12:00:00.000Z",
+    "expires_at": "2026-02-01T00:00:00.000Z"
+  }
+}
+```
+
+Notes:
+- The `api_key` field is shown only once; clients must store it securely.
+- The server never returns or exposes `api_key_hash`.
+
+Common error responses:
+- 400 Bad Request - Missing input or validation error
+- 409 Conflict - An active API key already exists (business rule)
+
+### 4) List API Keys (paginated)
+
+- URL: GET /api/tenants/api-keys
+- Description: Returns a paginated list of API keys for the authenticated tenant.
+- Query parameters (optional):
+  - `limit` (number) - number of records to return (default: 10, max: 100)
+  - `offset` (number) - zero-based offset (default: 0)
+
+Success response (200 OK):
+
+```json
+{
+  "data": [
+    {
+      "id": 123,
+      "tenant_id": 1,
+      "kid": "kid_...",
+      "label": "optional label",
+      "status": "active",
+      "created_at": "2026-01-30T12:00:00.000Z",
+      "updated_at": "2026-01-30T12:00:00.000Z",
+      "expires_at": "2026-02-01T00:00:00.000Z"
+    }
+  ],
+  "pagination": {
+    "limit": 10,
+    "offset": 0,
+    "count": 1
+  }
+}
+```
+
+Notes:
+- `api_key_hash` is not returned.
+- Use `limit` and `offset` for pagination. The server will clamp `limit` to a safe maximum.
+
+### 5) Change API Key Status (deactivate)
+
+- URL: POST /api/tenants/api-keys/:id
+- Description: Change the status of a key identified by `kid` (path param `:id`). Currently supports setting status to `inactive` (deactivation).
+- Content-Type: application/json
+
+Request body (JSON):
+
+```json
+{
+  "status": "inactive"
+}
+```
+
+Success response (200 OK):
+
+```json
+{
+  "message": "API key with ID kid_... has been deactivated."
+}
+```
+
+Notes:
+- The operation is idempotent: deactivating an already inactive key succeeds with 200.
+- If the key does not belong to the authenticated tenant, server returns 403 Forbidden.
+
+### 6) Remove API Key
+
+- URL: DELETE /api/tenants/api-keys/:id
+- Description: Permanently removes the API key record (server-side). This action is scoped to the authenticated tenant.
+
+Success response (200 OK):
+
+```json
+{
+  "message": "API key with ID kid_... has been removed."
+}
+```
+
+Errors:
+- 400 Bad Request - Missing ID
+- 403 Forbidden - Attempt to remove a key that belongs to another tenant
+- 404 Not Found - Key not found
+
+---
+
+Security and lifecycle guidance
+- Show the raw API secret only once at creation time. Encourage clients to rotate and store the key securely.
+- Track `last_used_at` server-side to detect stale keys and help with audits.
+- Use short expiry windows if appropriate and rotate keys regularly.
+
+SDK / frontend tips
+- After creating a key, immediately store the provided `api_key` securely (e.g., server-managed secret or secure vault). Do not rely on client-side storage if you can avoid it.
+
