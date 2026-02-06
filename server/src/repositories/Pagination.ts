@@ -1,6 +1,6 @@
 import { Constructor, BaseRepository } from "./BaseRepository"
 
-function WithPagination<TBase extends Constructor<BaseRepository<any, any>>>(
+function WithPagination<TBase extends Constructor<BaseRepository<any>>>(
     Base: TBase
 ) {
     return class extends Base {

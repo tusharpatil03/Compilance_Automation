@@ -1,8 +1,7 @@
 import { eq } from "drizzle-orm";
-import { BaseRepository } from "../../repositories/BaseRepository";
+import { BaseRepository, type DrizzleClient } from "../../repositories/BaseRepository";
 import { tenants, tenants_api_key } from "./schema";
 import { Tenant, NewTenant, NewTenantApiKey } from "./schema";
-import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 
 // Define the ITenantRepository interface
 export interface ITenantRepository {
@@ -13,12 +12,12 @@ export interface ITenantRepository {
 }
 
 // Create a base repository class for tenants
-class TenantRepositoryBase extends BaseRepository<typeof tenants, any> { }
+class TenantRepositoryBase extends BaseRepository<typeof tenants> { }
 
 // Implement the TenantRepository class (fixed typo)
 export class TenantRepository extends TenantRepositoryBase implements ITenantRepository {
     // Initialize the repository with the database connection and tenants table
-    constructor(db: NodePgDatabase<any>) {
+    constructor(db: DrizzleClient) {
         super(db, tenants);
     }
 
@@ -74,9 +73,10 @@ interface ITenantApiKeyRepository {
     removeApiKey(kid: string): Promise<void>;
 }
 
-class TenantApiKeyRepositoryBase extends BaseRepository<typeof tenants_api_key, any> { };
+class TenantApiKeyRepositoryBase extends BaseRepository<typeof tenants_api_key> { };
+
 export class TenantAPIKeyRepository extends TenantApiKeyRepositoryBase implements ITenantApiKeyRepository {
-    constructor(db: NodePgDatabase<any>) {
+    constructor(db: DrizzleClient ) {
         super(db, tenants_api_key);
     }
     async createApiKey(payload: NewTenantApiKey): Promise<NewTenantApiKey> {

@@ -25,6 +25,10 @@ export const hashApiKey = (apiKey: string): string => {
     return hashedApiKey;
 }
 
+export const compareApiKeyHash = (apiKey:string, api_key_hash:string): Promise<boolean> =>{
+    return bcrypt.compare(apiKey, api_key_hash);
+}
+
 export type JWTPayload = {
     id: number;
     email: string;

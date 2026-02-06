@@ -9,7 +9,7 @@
     "type-check": "tsc --noEmit",
     "build": "pnpm run type-check && esbuild src/server.ts --bundle --platform=node --outfile=dist/server.js",
     "start": "node dist/server.js",
-    "db:push": "pnpm dlx drizzle-kit push --config ./drizzle.config.ts",
+    "db:push": "pnpm exec drizzle-kit push --config ./drizzle.config.ts",
     "db:generate": "pnpm exec drizzle-kit generate --config ./drizzle.config.ts",
     "db:migrate": "pnpm exec drizzle-kit migrate --config ./drizzle.config.ts",
     "db:status": "pnpm exec drizzle-kit status --config ./drizzle.config.ts",

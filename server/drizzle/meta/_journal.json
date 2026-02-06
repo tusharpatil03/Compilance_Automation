@@ -5,15 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1770052934376,
-      "tag": "0000_whole_green_goblin",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1770053006190,
-      "tag": "0001_lean_blink",
+      "when": 1770400592230,
+      "tag": "0000_chilly_ronan",
       "breakpoints": true
     }
   ]
