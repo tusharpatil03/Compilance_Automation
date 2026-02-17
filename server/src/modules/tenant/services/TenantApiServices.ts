@@ -1,21 +1,26 @@
 import { db } from "../../../db/connection";
-import { TenantAPIKeyRepository, TenantRepository } from "../respository";
-import { NewTenantApiKey } from "../schema";
+import { TenantAPIKeyRepository, TenantRepository, WebhookRepository } from "../respository";
+import { NewTenantApiKey, NewWebhook, TenantApiKey, Webhook } from "../schema";
+import { createHmac } from "crypto";
 
 interface ITenantApiServices {
     createApiKey(payload: NewTenantApiKey): Promise<NewTenantApiKey>;
     deactivateApiKey(kid: string, tenantId?: number): Promise<void>;
     removeApiKey(kid: string, tenantId?: number): Promise<void>;
-    listApiKeys(tenantId: number, options?: { limit?: number; offset?: number }): Promise<NewTenantApiKey[]>;
+    listApiKeys(tenantId: number, options?: { limit?: number; offset?: number }): Promise<TenantApiKey[]>;
+    createWebhook(payload: NewWebhook): Promise<Webhook>;
+    getWebHooks(tenantId: number, options?: { limit?: number; offset?: number }): Promise<Webhook[]>;
 }
 
 export class TenantApiServices implements ITenantApiServices {
     private tenantApiKeyRepository: TenantAPIKeyRepository;
     private tenantRepository: TenantRepository;
+    private webhookRepository: WebhookRepository;
 
     constructor() {
         this.tenantApiKeyRepository = new TenantAPIKeyRepository(db);
         this.tenantRepository = new TenantRepository(db);
+        this.webhookRepository = new WebhookRepository(db);
     }
 
     async createApiKey(payload: NewTenantApiKey): Promise<NewTenantApiKey> {
@@ -77,7 +82,36 @@ export class TenantApiServices implements ITenantApiServices {
         await this.tenantApiKeyRepository.removeApiKey(kid);
     }
 
-    async listApiKeys(tenantId: number, options?: { limit?: number; offset?: number }): Promise<NewTenantApiKey[]> {
+    async listApiKeys(tenantId: number, options?: { limit?: number; offset?: number }): Promise<TenantApiKey[]> {
         return this.tenantApiKeyRepository.getApiKeysByTenantIdPaginated(tenantId, options);
+    }
+
+    //webhook services
+    async createWebhook(payload: NewWebhook): Promise<Webhook> {
+        // Validate tenant
+        const tenant = await this.tenantRepository.getTenantById(payload.tenant_id);
+        if (!tenant) {
+            throw new Error(`Tenant with ID ${payload.tenant_id} does not exist.`);
+        }
+
+        const supportedEvents = ["api_key.created", "api_key.deactivated", "api_key.rotated", "tenant.updated"];
+
+
+        const secret = createHmac("sha256", process.env.WEBHOOK_SECRET || "default_secret").update(`${payload.tenant_id}:${payload.url}:${Date.now()}`).digest("hex");
+
+        // Normalize payload fields
+        const toCreate: NewWebhook = {
+            tenant_id: payload.tenant_id,
+            url: payload.url,
+            events: supportedEvents,
+            secret,
+        } as NewWebhook;
+
+        const newWebhook = await this.webhookRepository.createWebhook(toCreate);
+        return newWebhook;
+    }
+
+    getWebHooks(tenantId: number, options?: { limit?: number; offset?: number; }): Promise<Webhook[]> {
+        return this.webhookRepository.getWebhooksByTenantId(tenantId);
     }
 }

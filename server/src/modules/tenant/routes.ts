@@ -12,7 +12,6 @@ import { authenticateTenant } from "./middlewares/auth";
 
 const router = Router();
 
-
 router.post("/register", validagteBody(tenantRegisterSchema), registerTenant);
 
 router.post("/login", validagteBody(tenantLoginSchema), loginTenant);

@@ -1,5 +1,5 @@
 // tenant model schema
-import { pgEnum, integer, pgTable, varchar, AnyPgColumn, timestamp, uniqueIndex, index } from "drizzle-orm/pg-core";
+import { pgEnum, integer, pgTable, varchar, AnyPgColumn, timestamp, uniqueIndex, index, jsonb } from "drizzle-orm/pg-core";
 
 // Status used for tenants and keys
 export const TenantStatus = pgEnum("tenant_status", ["active", "inactive", "suspended"]);
@@ -51,3 +51,17 @@ export const tenants_api_key = pgTable("tenants_api_keys", {
 
 export type TenantApiKey = typeof tenants_api_key.$inferSelect;
 export type NewTenantApiKey = typeof tenants_api_key.$inferInsert;
+
+
+export const webhooks = pgTable("webhooks", {
+    id: integer().primaryKey().generatedAlwaysAsIdentity(),
+    tenant_id: integer().notNull().references((): AnyPgColumn => tenants.id),
+    url: varchar({ length: 2048 }).notNull(),
+    events: jsonb("events").notNull(), // array of event types this webhook subscribes to
+    secret: varchar({ length: 255 }).notNull(), // secret for signing webhook payloads
+    created_at: timestamp({ mode: "string" }).notNull().defaultNow(),
+    updated_at: timestamp({ mode: "string" }).notNull().defaultNow(),
+});
+
+export type Webhook = typeof webhooks.$inferSelect;
+export type NewWebhook = typeof webhooks.$inferInsert;

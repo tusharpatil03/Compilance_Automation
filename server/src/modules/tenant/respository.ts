@@ -1,7 +1,8 @@
 import { eq } from "drizzle-orm";
 import { BaseRepository, type DrizzleClient } from "../../repositories/BaseRepository";
-import { tenants, tenants_api_key } from "./schema";
+import { NewWebhook, TenantApiKey, tenants, tenants_api_key, Webhook, webhooks } from "./schema";
 import { Tenant, NewTenant, NewTenantApiKey } from "./schema";
+import { PgTable } from "drizzle-orm/pg-core";
 
 // Define the ITenantRepository interface
 export interface ITenantRepository {
@@ -130,7 +131,7 @@ export class TenantAPIKeyRepository extends TenantApiKeyRepositoryBase implement
     async getApiKeysByTenantIdPaginated(
         tenantId: number,
         options?: { limit?: number; offset?: number }
-    ): Promise<NewTenantApiKey[]> {
+    ): Promise<TenantApiKey[]> {
         const db = this.getDb();
         const { limit, offset } = this.normalizePagination(options);
         const apiKeys = await db
@@ -140,6 +141,53 @@ export class TenantAPIKeyRepository extends TenantApiKeyRepositoryBase implement
             .limit(limit)
             .offset(offset)
             .execute();
-        return apiKeys as unknown as NewTenantApiKey[];
+        return apiKeys as unknown as TenantApiKey[];
+    }
+}
+
+
+// Webhooks repository
+class WebhookRespositoryBase extends BaseRepository<typeof webhooks>{}
+
+interface IWebhookRepository {
+    createWebhook(payload: Partial<NewWebhook>): Promise<Webhook>;
+    getWebhooksByTenantId(tenantId: number): Promise<Webhook[]>;
+    deleteWebhook(id: number): Promise<void>;
+    deleteWebhooksByTenantId(tenantId: number): Promise<void>;
+}
+
+export class WebhookRepository extends WebhookRespositoryBase implements IWebhookRepository {
+    constructor(db: DrizzleClient) {
+        super(db, webhooks);
+    }
+    
+    async createWebhook(payload: Partial<NewWebhook>): Promise<Webhook> {
+        const db = this.getDb();
+        const [created] = await db.insert(this.table).values(payload as NewWebhook).returning();
+        return created as unknown as Webhook;
+    }
+
+    async getWebhooksByTenantId(tenantId: number): Promise<Webhook[]> {
+        const db = this.getDb();
+        const hooks = await db
+            .select()
+            .from(this.table)
+            .where(eq(this.table.tenant_id, tenantId))
+            .execute();
+        return hooks as unknown as Webhook[];
+    }
+
+    async deleteWebhook(id: number): Promise<void> {
+        const db = this.getDb();
+        await db
+            .delete(this.table)
+            .where(eq(this.table.id, id));
+    }
+    
+    async deleteWebhooksByTenantId(tenantId: number): Promise<void> {
+        const db = this.getDb();
+        await db
+            .delete(this.table)
+            .where(eq(this.table.tenant_id, tenantId));
     }
 }
