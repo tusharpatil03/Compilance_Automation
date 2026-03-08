@@ -1,34 +1,28 @@
-import { TenantAPIKeyRepository, TenantRepository } from "../modules/tenant/respository";
-import { RiskProfileRepository, UserRepository } from "../modules/users/repository";
 import { DrizzleClient } from "./BaseRepository";
 
 export interface UnitOfWork {
-    userRepository: UserRepository;
-    riskProfileRepository: RiskProfileRepository;
-    tenantRepository: TenantRepository;
-    tenantApiKeyRepository: TenantAPIKeyRepository;
-
-    run<T>(fn: ()=> Promise<T>): Promise<T>;
+    execute<T>(work: (uow: this) => Promise<T>): Promise<T>;
+    getRepository<T>(Repo: new (tx: any) => T): T;
 }
 
-
 export class DrizzleUnitOfWork implements UnitOfWork {
-    tenantRepository!: TenantRepository;
-    tenantApiKeyRepository!: TenantAPIKeyRepository;
-    userRepository!: UserRepository;
-    riskProfileRepository!: RiskProfileRepository;
+    private readonly db: DrizzleClient;
+    private tx: any
 
-    constructor(private readonly db: DrizzleClient){}
+    constructor(db: DrizzleClient) {
+        this.db = db;
+    }
 
-    async run<T>(fn: () => Promise<T>): Promise<T> {
+    async execute<T>(work: (uow: this) => Promise<T>): Promise<T> {
         return this.db.transaction(async (tx) => {
-            // Initialize repositories with the transaction context
-            this.userRepository = new UserRepository(tx);
-            this.riskProfileRepository = new RiskProfileRepository(tx);
-            this.tenantRepository = new TenantRepository(tx);
-            this.tenantApiKeyRepository = new TenantAPIKeyRepository(tx);
+            this.tx = tx;
 
-            return fn();
-        }); 
+            //execute the work function with the unit of work instance
+            return await work(this);
+        });
+    }
+
+    getRepository<T>(Repo: new (tx: any) => T): T {
+        return new Repo(this.tx)
     }
 }

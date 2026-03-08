@@ -8,12 +8,10 @@ import { DrizzleUnitOfWork, UnitOfWork } from "../../../repositories/UnitOfWork"
 
 export class UserController {
   public userServices: UserServices;
-  private readonly repository: UserRepository;
   protected readonly uow: UnitOfWork;
 
   constructor() {
-    this.repository = new UserRepository(db);
-    this.userServices = new UserServices(db);
+    this.userServices = new UserServices();
     this.uow = new DrizzleUnitOfWork(db);
   }
 

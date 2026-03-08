@@ -1,15 +1,8 @@
-import { NodePgDatabase } from "drizzle-orm/node-postgres";
 import { RiskProfileRepository, UserRepository } from "../repository";
 import { NewUser, User } from "../schema";
-import { db } from "../../../db/connection";
 import { UnitOfWork } from "../../../repositories/UnitOfWork";
 
 export class UserServices {
-    private userRepository: UserRepository;
-    constructor(db: NodePgDatabase<any>) {
-        this.userRepository = new UserRepository(db);
-    }
-
     public async createUser(uow: UnitOfWork, payload: NewUser): Promise<User> {
         if (!payload.tenant_id) {
             throw new Error("Tenant id is required");
@@ -19,15 +12,19 @@ export class UserServices {
         }
 
         // Always run sync inside a transaction so user + risk_profile are consistent.
-        return uow.run(async () => {
+        return uow.execute<User>(async (uow) => {
             const now = new Date().toISOString();
-            const existing = await uow.userRepository.getUserByExternalIdAndTenant(
+
+            const userRepository = uow.getRepository(UserRepository);
+            const riskProfileRepository = uow.getRepository(RiskProfileRepository);
+
+            const existing = await userRepository.getUserByExternalIdAndTenant(
                 payload.external_customer_id,
                 payload.tenant_id
             );
 
             if (existing) {
-                const updatedUser = await uow.userRepository.updateUserForTenant(existing.external_customer_id, payload.tenant_id, {
+                const updatedUser = await userRepository.updateUserForTenant(existing.external_customer_id, payload.tenant_id, {
                     name: payload.name,
                     email: payload.email,
                     phone: payload.phone,
@@ -35,9 +32,9 @@ export class UserServices {
                     updated_at: now,
                 });
 
-                const risk = await uow.riskProfileRepository.getRiskProfileByUserId(updatedUser.id);
+                const risk = await riskProfileRepository.getRiskProfileByUserId(updatedUser.id);
                 if (!risk) {
-                    await uow.riskProfileRepository.createRiskProfile({
+                    await riskProfileRepository.createRiskProfile({
                         user_id: updatedUser.id,
                         risk_score: 0,
                     });
@@ -46,14 +43,14 @@ export class UserServices {
                 return updatedUser;
             }
 
-            const createdUser = await uow.userRepository.createUser({
+            const createdUser = await userRepository.createUser({
                 ...payload,
                 status: payload.status ?? "active",
                 created_at: payload.created_at ?? now,
                 updated_at: now,
             });
 
-            await uow.riskProfileRepository.createRiskProfile({
+            await riskProfileRepository.createRiskProfile({
                 user_id: createdUser.id,
                 risk_score: 0,
             });

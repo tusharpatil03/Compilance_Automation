@@ -8,7 +8,7 @@ export class BaseRepository<T extends PgTable> {
     protected defaultOffset = 0;
 
     // The repository no longer constructs the DB; it receives a typed instance.
-    protected readonly db: NodePgDatabase<any>;
+    protected readonly db: DrizzleClient;
     protected readonly table: T;
 
     constructor(db: NodePgDatabase<any>, table: T) {

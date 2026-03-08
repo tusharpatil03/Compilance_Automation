@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
-import { TenantRepository } from "../respository";
 import { db } from "../../../db/connection";
 import { AuthService } from "../services/AuthService";
+import { DrizzleUnitOfWork } from "../../../repositories/UnitOfWork";
 
 /**
  * Login tenant controller
@@ -11,12 +11,13 @@ export const loginTenant = async (req: Request, res: Response): Promise<Response
     try {
         const { email, password } = req.body;
 
-        // Initialize repository and service
-        const tenantRepository = new TenantRepository(db);
-        const authService = new AuthService(tenantRepository);
+        // instance of UnitOfWork to manage transaction and repositories
+        const uow = new DrizzleUnitOfWork(db);
+
+        const authService = new AuthService();
 
         // Authenticate tenant and generate token
-        const { tenant, token } = await authService.loginTenant({ email, password });
+        const { tenant, token } = await authService.loginTenant(uow, { email, password });
 
         return res.status(200).json({
             success: true,

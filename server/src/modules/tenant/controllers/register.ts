@@ -1,7 +1,7 @@
 // register controller for tenant module
 import { Request, Response } from "express";
 import { AuthService } from "../services/AuthService";
-import { TenantRepository } from "../respository";
+import { DrizzleUnitOfWork } from "../../../repositories/UnitOfWork";
 import { db } from "../../../db/connection";
 
 /**
@@ -13,11 +13,13 @@ export const registerTenant = async (req: Request, res: Response): Promise<Respo
         const { name, email, password } = req.body;
         
         // Initialize repository and service
-        const tenantRepository = new TenantRepository(db);
-        const authService = new AuthService(tenantRepository);
+        const authService = new AuthService();
+
+        // instance of UnitOfWork to manage transaction and repositories
+        const uow = new DrizzleUnitOfWork(db);
 
         // Register tenant and generate token
-        const { tenant, token } = await authService.registerTenant({ name, email, password });
+        const { tenant, token } = await authService.registerTenant(uow, { name, email, password });
 
         return res.status(201).json({
             success: true,

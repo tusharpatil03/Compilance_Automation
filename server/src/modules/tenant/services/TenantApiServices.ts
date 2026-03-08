@@ -96,7 +96,6 @@ export class TenantApiServices implements ITenantApiServices {
 
         const supportedEvents = ["api_key.created", "api_key.deactivated", "api_key.rotated", "tenant.updated"];
 
-
         const secret = createHmac("sha256", process.env.WEBHOOK_SECRET || "default_secret").update(`${payload.tenant_id}:${payload.url}:${Date.now()}`).digest("hex");
 
         // Normalize payload fields

@@ -2,98 +2,89 @@ import { TenantRepository } from "../respository";
 import * as security from "../../../utils/security";
 import { Tenant, NewTenant } from "../schema";
 import { TenantRegisterInput, TenantLoginInput, TenantResponse } from "../zodSchema";
+import { UnitOfWork } from "../../../repositories/UnitOfWork";
 
-/**
- * AuthService handles tenant registration and authentication logic
- * Designed for scalability: stateless, dependency injection, clean separation of concerns
- */
+
 export class AuthService {
-    constructor(private readonly tenantRepository: TenantRepository) {}
-
-    /**
-     * Register a new tenant with hashed password
-     * @param payload - Tenant registration data (name, email, password)
-     * @returns Tenant response with JWT token
-     */
-    async registerTenant(payload: TenantRegisterInput): Promise<{ tenant: TenantResponse; token: string }> {
+    async registerTenant(uow: UnitOfWork, payload: TenantRegisterInput): Promise<{ tenant: TenantResponse; token: string }> {
         // Check if tenant already exists
-        const existingTenant = await this.tenantRepository.getTenantByEmail(payload.email);
-        if (existingTenant) {
-            throw new Error("Tenant already exists with this email");
-        }
+        return uow.execute(async (uow) => {
+            const tenantRepository = uow.getRepository(TenantRepository);
 
-        // Hash password with salt
-        const { hashedPassword, salt } = security.hashPassword(payload.password);
+            const existingTenant = await tenantRepository.getTenantByEmail(payload.email);
+            if (existingTenant) {
+                throw new Error("Tenant already exists with this email");
+            }
 
-        // Create tenant with hashed credentials
-        const newTenant: Partial<NewTenant> = {
-            name: payload.name,
-            email: payload.email,
-            password: hashedPassword,
-            salt: salt,
-            status: "active",
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-        };
+            // Hash password with salt
+            const { hashedPassword, salt } = security.hashPassword(payload.password);
 
-        const tenant = await this.tenantRepository.createTenant(newTenant as NewTenant);
+            const newTenant: Partial<NewTenant> = {
+                name: payload.name,
+                email: payload.email,
+                password: hashedPassword,
+                salt: salt,
+                status: "active",
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+            };
 
-        // Generate JWT token for immediate authentication
-        const token = security.generateJWTToken({
-            id: tenant.id,
-            email: tenant.email,
+            const tenant = await tenantRepository.createTenant(newTenant as NewTenant);
+
+            // Generate JWT token for immediate authentication
+            const token = security.generateJWTToken({
+                id: tenant.id,
+                email: tenant.email,
+            });
+
+            // Return sanitized tenant response (no password/salt)
+            return {
+                tenant: this.sanitizeTenantResponse(tenant),
+                token,
+            };
+
         });
-
-        // Return sanitized tenant response (no password/salt)
-        return {
-            tenant: this.sanitizeTenantResponse(tenant),
-            token,
-        };
     }
 
-    /**
-     * Authenticate tenant with email and password
-     * @param payload - Login credentials (email, password)
-     * @returns Tenant response with JWT token
-     */
-    async loginTenant(payload: TenantLoginInput): Promise<{ tenant: TenantResponse; token: string }> {
-        // Find tenant by email
-        const tenant = await this.tenantRepository.getTenantByEmail(payload.email);
-        
-        if (!tenant) {
-            throw new Error("Invalid email or password");
-        }
 
-        // Check if tenant is active
-        if (tenant.status !== "active") {
-            throw new Error("Tenant account is not active");
-        }
+    async loginTenant(uow: UnitOfWork, payload: TenantLoginInput): Promise<{ tenant: TenantResponse; token: string }> {
+        return uow.execute(async (uow) => {
+            const tenantRepository = uow.getRepository(TenantRepository);
+            // Find tenant by email
+            const tenant = await tenantRepository.getTenantByEmail(payload.email);
 
-        // Verify password
-        const isPasswordValid = security.comparePassword(payload.password, tenant.password, tenant.salt);
+            if (!tenant) {
+                throw new Error("Invalid email or password");
+            }
 
-        if (!isPasswordValid) {
-            throw new Error("Invalid email or password");
-        }
+            // Check if tenant is active
+            if (tenant.status !== "active") {
+                throw new Error("Tenant account is not active");
+            }
 
-        // Generate JWT token
-        const token = security.generateJWTToken({
-            id: tenant.id,
-            email: tenant.email,
+            // Verify password
+            const isPasswordValid = security.comparePassword(payload.password, tenant.password, tenant.salt);
+
+            if (!isPasswordValid) {
+                throw new Error("Invalid email or password");
+            }
+
+            // Generate JWT token
+            const token = security.generateJWTToken({
+                id: tenant.id,
+                email: tenant.email,
+            });
+
+            // Return sanitized tenant response
+            return {
+                tenant: this.sanitizeTenantResponse(tenant),
+                token,
+            };
         });
 
-        // Return sanitized tenant response
-        return {
-            tenant: this.sanitizeTenantResponse(tenant),
-            token,
-        };
     }
 
-    /**
-     * Sanitize tenant response to remove sensitive fields (password, salt)
-     * @param tenant - Raw tenant from database
-     * @returns Public tenant response
-     */
+    // sanitize tenant response to exclude sensitive information like password and salt
     private sanitizeTenantResponse(tenant: Tenant): TenantResponse {
         return {
             id: tenant.id,
