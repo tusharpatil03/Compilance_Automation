@@ -1,0 +1,2 @@
+## Event Consumers
+the event consumers or event listernes are the ones that listen to the events emitted by the event emitters and process them accordingly. They are responsible for handling the business logic related to the events and updating the state of the application accordingly.

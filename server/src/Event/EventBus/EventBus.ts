@@ -1,3 +1,12 @@
+
+/**
+    The EventBus is a simple implementation of the publish-subscribe pattern using Redis as the underlying message broker. 
+    It allows for decoupling of event producers and consumers, enabling a more scalable and maintainable architecture. 
+    The EventBusMessage interface defines the structure of the messages that are published and consumed, 
+    while the EventBus interface defines the methods for publishing and subscribing to events. 
+    The RedisEventBus class implements the EventBus interface using BullMQ, a popular library for working with Redis queues in Node.js.
+ */
+
 export interface EventBusMessage<T = unknown> {
     eventId: number
     eventType: string
@@ -16,7 +25,7 @@ export interface EventBus {
     ): Promise<void>
 }
 
-import {Queue, Worker} from "bullmq";
+import { Queue, Worker } from "bullmq";
 
 export class RedisEventBus implements EventBus {
 

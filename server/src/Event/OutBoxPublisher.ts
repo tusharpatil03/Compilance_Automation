@@ -1,5 +1,11 @@
-import { OutboxRepository } from "./DomainEvents/Repository/Outbox";
-import { EventBus, EventBusMessage } from "./EventBus";
+/**
+    The OutboxPublisher is responsible for fetching unprocessed events from the outbox repository and publishing them to the event bus. 
+    It ensures that events are published in a reliable manner, handling any errors that may occur during the publishing process. 
+    The OutboxPublisher can be scheduled to run at regular intervals, ensuring that all events are eventually published even if there are temporary issues with the event bus or network.
+ */
+
+import { OutboxRepository } from "./Repository/Outbox";
+import { EventBus, EventBusMessage } from "./EventBus/EventBus";
 
 export class OutboxPublisher {
     constructor(
