@@ -1,5 +1,5 @@
-import { eq } from "drizzle-orm";
-import { BaseRepository, DrizzleClient } from "../../../repositories/BaseRepository";
+import { eq, sql } from "drizzle-orm";
+import { BaseRepository, DrizzleClient } from "../../repositories/BaseRepository";
 import { outbox, OutboxRecord, NewOutboxRecord } from "./schema";
 
 interface IOutboxRepository {
@@ -24,7 +24,7 @@ export class OutboxRepository extends BaseRepository<typeof outbox> implements I
             .update(this.table)
             .set({ processed_at: new Date().toISOString(), processed: 1 })
             .where(eq(this.table.id, id))
-            .execute(); 
+            .execute();
     }
 
     async getUnprocessedEntries(): Promise<OutboxRecord[]> {
@@ -42,6 +42,14 @@ export class OutboxRepository extends BaseRepository<typeof outbox> implements I
         await db
             .delete(this.table)
             .where(eq(this.table.processed, 1))
+            .execute();
+    }
+
+    async incrementRetry(id: number): Promise<void> {
+        const db = this.getDb();
+        await db.update(this.table)
+            .set({ retries: sql`${this.table.retries} + 1` })
+            .where(eq(this.table.id, id))
             .execute();
     }
 }

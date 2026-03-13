@@ -25,6 +25,7 @@ export const outbox = pgTable("outbox", {
     occurred_at: timestamp({ mode: "string" }).notNull().defaultNow(),
     processed_at: timestamp({ mode: "string" }),
     processed: integer().notNull().default(0), //for retry mechanism
+    retries: integer().notNull().default(0), //for retry mechanism
 }, (table) => {
     return {
         tenantEventIdx: index("ix_outbox_tenant_event").on(table.tenant_id, table.event_type),

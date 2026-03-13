@@ -35,7 +35,7 @@ export class OutboxPublisher {
             } catch (err) {
                 //increment retry count and log error for monitoring
                 console.error(`Failed to publish event ${record.id} of type ${record.event_type}:`, err);
-                // await this.outboxRepo.incrementRetry(record.id);
+                await this.outboxRepo.incrementRetry(record.id);
             }
         }
     }
