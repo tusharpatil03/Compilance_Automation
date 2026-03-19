@@ -1,8 +1,10 @@
 import { BaseDomainEvent } from "./DomainEvent";
 
+export type KycStatus = "pending" | "approved" | "rejected";
+
 type KycCompletedPayload = {
     userId: string;
-    status: "pending" |"approved" | "rejected";
+    status: KycStatus;
     riskScore: number;
 };
 

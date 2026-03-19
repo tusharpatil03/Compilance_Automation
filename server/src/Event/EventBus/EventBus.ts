@@ -20,14 +20,15 @@ export interface EventBusMessage<T = unknown> {
 export interface EventBus {
     publish(message: EventBusMessage): Promise<void>
     subscribe(
-        eventType: string,
         handler: (message: EventBusMessage) => Promise<void>
     ): Promise<void>
+    close?(): Promise<void>
 }
 
 import { Queue, Worker } from "bullmq";
 
 export class RedisEventBus implements EventBus {
+    private worker?: Worker;
 
     constructor(
         private readonly queue: Queue
@@ -38,23 +39,36 @@ export class RedisEventBus implements EventBus {
             message.eventType,
             message,
             {
-                removeOnComplete: true,
+                removeOnComplete: false,
                 attempts: 5
             }
         )
     }
 
     async subscribe(
-        eventType: string,
         handler: (msg: EventBusMessage) => Promise<void>
     ): Promise<void> {
+        if (this.worker) {
+            return;
+        }
 
-        new Worker(
+        this.worker = new Worker(
             this.queue.name,
             async job => {
-                if (job.name !== eventType) return
                 await handler(job.data)
+            },
+            {
+                connection: this.queue.opts.connection,
             }
         )
+    }
+
+    async close(): Promise<void> {
+        if (this.worker) {
+            await this.worker.close();
+            this.worker = undefined;
+        }
+
+        await this.queue.close();
     }
 }

@@ -1,5 +1,5 @@
 import { eq } from "drizzle-orm";
-import { BaseRepository, DrizzleClient } from "../../../repositories/BaseRepository";
+import { BaseRepository, DrizzleClient } from "../../repositories/BaseRepository";
 import { event_store, EventStoreRecord, NewEventStoreRecord } from "./schema";
 
 interface IEventStoreRepository {

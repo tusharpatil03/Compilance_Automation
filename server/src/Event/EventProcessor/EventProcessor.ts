@@ -5,13 +5,13 @@ export class EventProcessor {
     constructor(private readonly listnerReg:ListenerRegistry) { }
 
     async processEvent<T>(event: EventBusMessage) {
-        const listeners = this.listnerReg.getListeners(event.constructor.name)
+        const listeners = this.listnerReg.getListeners(event.eventType)
 
         for (const listener of listeners) {
             try {
                 await listener.handle(event)
             } catch (err) {
-                console.error(`Error processing event ${event.constructor.name} with listener ${listener.constructor.name}:`, err);
+                console.error(`Error processing event ${event.eventType}:`, err);
             }
         }
     }
