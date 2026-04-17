@@ -4,12 +4,15 @@ import { NewTenantApiKey, NewWebhook, TenantApiKey, Webhook } from "../schema";
 import { createHmac } from "crypto";
 
 interface ITenantApiServices {
-    createApiKey(payload: NewTenantApiKey): Promise<NewTenantApiKey>;
-    deactivateApiKey(kid: string, tenantId?: number): Promise<void>;
-    removeApiKey(kid: string, tenantId?: number): Promise<void>;
+    createApiKey(payload: NewTenantApiKey): Promise<TenantApiKey>;
+    deactivateApiKey(key_prefix: string, tenantId: number): Promise<void>;
+    revokeApiKey(key_prefix: string, tenantId: number): Promise<void>;
+    removeApiKey(key_prefix: string, tenantId: number): Promise<void>;
     listApiKeys(tenantId: number, options?: { limit?: number; offset?: number }): Promise<TenantApiKey[]>;
+    validateApiKey(key_prefix: string, tenantId: number): Promise<boolean>;
     createWebhook(payload: NewWebhook): Promise<Webhook>;
     getWebHooks(tenantId: number, options?: { limit?: number; offset?: number }): Promise<Webhook[]>;
+    deleteWebhook(id: number, tenantId: number): Promise<void>;
 }
 
 export class TenantApiServices implements ITenantApiServices {
@@ -23,7 +26,7 @@ export class TenantApiServices implements ITenantApiServices {
         this.webhookRepository = new WebhookRepository(db);
     }
 
-    async createApiKey(payload: NewTenantApiKey): Promise<NewTenantApiKey> {
+    async createApiKey(payload: NewTenantApiKey): Promise<TenantApiKey> {
         // Validate tenant
         if (!payload.tenant_id) {
             throw new Error("Tenant ID is required to create an API key.");
@@ -33,21 +36,12 @@ export class TenantApiServices implements ITenantApiServices {
             throw new Error(`Tenant with ID ${payload.tenant_id} does not exist.`);
         }
 
-        // Enforce single active key per tenant (business rule)
-        const existingKeys = await this.tenantApiKeyRepository.getApiKeysByTenantId(payload.tenant_id);
-        const hasActive = existingKeys.some((key) => key.status === "active");
-        if (hasActive) {
-            throw new Error(
-                `An active API key already exists for tenant ID ${payload.tenant_id}. Please deactivate it before creating a new one.`
-            );
-        }
-
         // Normalize payload fields
         const toCreate: NewTenantApiKey = {
             tenant_id: payload.tenant_id,
             api_key_hash: payload.api_key_hash,
-            label: payload.label ?? "",
-            kid: payload.kid,
+            key_prefix: payload.key_prefix,
+            api_key: payload.api_key, // encrypted api key from controller
             expires_at: payload.expires_at,
             status: "active",
         } as NewTenantApiKey;
@@ -56,34 +50,98 @@ export class TenantApiServices implements ITenantApiServices {
         return newApiKey;
     }
 
-    async deactivateApiKey(kid: string, tenantId?: number): Promise<void> {
-        const existingKey = await this.tenantApiKeyRepository.getApiKeyByKid(kid);
-        if (!existingKey) {
-            throw new Error(`API key with ID ${kid} does not exist.`);
+    async deactivateApiKey(key_prefix: string, tenantId: number): Promise<void> {
+        if (!tenantId) {
+            throw new Error("Tenant ID is required");
         }
-        if (tenantId && existingKey.tenant_id !== tenantId) {
+
+        const existingKey = await this.tenantApiKeyRepository.getApiKeyByKey_prefix(key_prefix, tenantId);
+        if (!existingKey) {
+            throw new Error(`API key with prefix ${key_prefix} does not exist.`);
+        }
+
+        if (existingKey.tenant_id !== tenantId) {
             throw new Error("Forbidden: key does not belong to tenant");
         }
+
         if (existingKey.status === "inactive") {
-            // idempotent
+            // idempotent - already inactive
             return;
         }
-        await this.tenantApiKeyRepository.deactivateApiKey(kid);
+
+        await this.tenantApiKeyRepository.changeStatus(existingKey.id, "inactive");
     }
 
-    async removeApiKey(kid: string, tenantId?: number): Promise<void> {
-        const existingKey = await this.tenantApiKeyRepository.getApiKeyByKid(kid);
-        if (!existingKey) {
-            throw new Error(`API key with ID ${kid} does not exist.`);
+    async revokeApiKey(key_prefix: string, tenantId: number): Promise<void> {
+        if (!tenantId) {
+            throw new Error("Tenant ID is required");
         }
-        if (tenantId && existingKey.tenant_id !== tenantId) {
+
+        const existingKey = await this.tenantApiKeyRepository.getApiKeyByKey_prefix(key_prefix, tenantId);
+        if (!existingKey) {
+            throw new Error(`API key with prefix ${key_prefix} does not exist.`);
+        }
+
+        if (existingKey.tenant_id !== tenantId) {
             throw new Error("Forbidden: key does not belong to tenant");
         }
-        await this.tenantApiKeyRepository.removeApiKey(kid);
+
+        if (existingKey.status === "revoked") {
+            // idempotent - already revoked
+            return;
+        }
+
+        await this.tenantApiKeyRepository.revokeApiKey(existingKey.id);
     }
 
-    async listApiKeys(tenantId: number, options?: { limit?: number; offset?: number }): Promise<TenantApiKey[]> {
-        return this.tenantApiKeyRepository.getApiKeysByTenantIdPaginated(tenantId, options);
+    async removeApiKey(key_prefix: string, tenantId: number): Promise<void> {
+        if (!tenantId) {
+            throw new Error("Tenant ID is required");
+        }
+
+        const existingKey = await this.tenantApiKeyRepository.getApiKeyByKey_prefix(key_prefix, tenantId);
+        if (!existingKey) {
+            throw new Error(`API key with prefix ${key_prefix} does not exist.`);
+        }
+
+        if (existingKey.tenant_id !== tenantId) {
+            throw new Error("Forbidden: key does not belong to tenant");
+        }
+
+        await this.tenantApiKeyRepository.removeApiKey(existingKey.id);
+    }
+
+    listApiKeys(tenantId: number, options?: { limit?: number; offset?: number; }): Promise<TenantApiKey[]> {
+        return this.tenantApiKeyRepository.getApiKeysByTenantId(tenantId);
+    }
+
+    async validateApiKey(key_prefix: string, tenantId: number): Promise<boolean> {
+        const apiKey = await this.tenantApiKeyRepository.getActiveApiKeyByKeyPrefix(key_prefix, tenantId);
+
+        if (!apiKey) {
+            return false;
+        }
+
+        // Check if key has expired
+        if (apiKey.expires_at) {
+            const now = new Date();
+            const expiryDate = new Date(apiKey.expires_at);
+            if (now > expiryDate) {
+                return false;
+            }
+        }
+
+        // Check if key is not revoked
+        if (apiKey.status === "revoked") {
+            return false;
+        }
+
+        // Check if key is not inactive
+        if (apiKey.status === "inactive") {
+            return false;
+        }
+
+        return true;
     }
 
     //webhook services
@@ -112,5 +170,17 @@ export class TenantApiServices implements ITenantApiServices {
 
     getWebHooks(tenantId: number, options?: { limit?: number; offset?: number; }): Promise<Webhook[]> {
         return this.webhookRepository.getWebhooksByTenantId(tenantId);
+    }
+
+    async deleteWebhook(id: number, tenantId: number): Promise<void> {
+        // Verify webhook belongs to tenant
+        const webhooks = await this.webhookRepository.getWebhooksByTenantId(tenantId);
+        const webhook = webhooks.find((w) => w.id === id);
+
+        if (!webhook) {
+            throw new Error("Webhook not found or does not belong to your tenant");
+        }
+
+        await this.webhookRepository.deleteWebhook(id);
     }
 }

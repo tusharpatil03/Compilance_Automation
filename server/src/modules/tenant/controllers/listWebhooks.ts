@@ -1,11 +1,9 @@
-//list api keys controller
-
 import { Request, Response } from "express";
 import type { AuthenticatedRequest } from "../middlewares/auth";
 import { TenantApiServices } from "../services/TenantApiServices";
 import { sendErrorResponse, sendSuccessResponse, Errors, ApiError } from "../../../utils/errorHandler";
 
-export async function listApiKeys(req: Request, res: Response) {
+export async function listWebhooks(req: Request, res: Response) {
     try {
         const authReq = req as AuthenticatedRequest;
         const tenantId = authReq.tenant?.id;
@@ -18,15 +16,14 @@ export async function listApiKeys(req: Request, res: Response) {
         const offset = Number(req.query.offset ?? 0);
 
         const service = new TenantApiServices();
-        const keys = await service.listApiKeys(tenantId, { limit, offset });
+        const webhooks = await service.getWebHooks(tenantId, { limit, offset });
 
-        // Never send api_key_hash
-        const sanitized = keys.map(({ api_key_hash, ...rest }) => rest);
+        const sanitized = webhooks.map(({ secret, ...rest }) => rest);
 
         return sendSuccessResponse(
             res,
             200,
-            "API keys retrieved successfully",
+            "Webhooks retrieved successfully",
             sanitized,
             { limit, offset, total: sanitized.length }
         );
@@ -37,7 +34,7 @@ export async function listApiKeys(req: Request, res: Response) {
 
         return sendErrorResponse(
             res,
-            Errors.internalError(error?.message ?? "Failed to list API keys"),
+            Errors.internalError(error?.message ?? "Failed to list webhooks"),
             500
         );
     }

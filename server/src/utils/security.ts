@@ -1,6 +1,6 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-
+import crypto from 'crypto';
 
 export const hashPassword = (password: string, salt?: string): { hashedPassword: string, salt: string } => {
     if (!salt) {
@@ -46,4 +46,15 @@ export const generateJWTToken = (JWTPayload: JWTPayload): string => {
         secretKey,
         { expiresIn: "1h" }); // default 1 hour
     return token;
+}
+
+// function to encrypt data using AES-256-CBC
+export const encryptData = (data: string, secret: string): string => {
+    const iv = crypto.randomBytes(16); // generate random initialization vector
+
+    const cipher = crypto.createCipheriv('aes-256-cbc', Buffer.from(secret, 'hex'), iv);
+    let encrypted = cipher.update(data, 'utf8', 'hex');
+    encrypted += cipher.final('hex');
+
+    return iv.toString('hex') + ':' + encrypted; // prepend IV for later use in decryption
 }

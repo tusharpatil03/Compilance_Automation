@@ -1,38 +1,39 @@
 import { Request, Response } from "express";
 import { TenantApiServices } from "../services/TenantApiServices";
 import { NewTenantApiKey } from "../schema";
-import { generateApiKey, hashApiKey } from "../../../utils/security";
-import crypto from "crypto";
+import { encryptData, generateApiKey, hashApiKey } from "../../../utils/security";
+import { sendErrorResponse, sendSuccessResponse, Errors, ApiError } from "../../../utils/errorHandler";
 import type { AuthenticatedRequest } from "../middlewares/auth";
 
 export async function createApiKey(req: Request, res: Response) {
     try {
-        const { tenant_id, label, expires_at } = req.body as {
-            tenant_id?: number;
-            label?: string;
+        const { kid, expires_at } = req.body as {
+            kid: string;
             expires_at?: string;
         };
 
-        // Prefer authenticated tenant id if middleware is used; fallback to body for now
         const authReq = req as AuthenticatedRequest;
-        const effectiveTenantId = authReq.tenant?.id ?? tenant_id;
+        const tenantId = authReq.tenant?.id;
 
-        if (!effectiveTenantId) {
-            return res.status(400).json({ error: "tenant_id is required" });
+        if (!tenantId) {
+            return sendErrorResponse(res, Errors.authRequired());
         }
 
         // Generate secret and hash
         const api_key = generateApiKey();
         const api_key_hash = hashApiKey(api_key);
 
-        // Create random, collision-resistant kid (prefix for readability)
-        const kid = `kid_${crypto.randomBytes(8).toString("hex")}`;
+        // Encrypt api key before storing
+        const encryptedApiKey = encryptData(
+            api_key,
+            process.env.API_KEY_ENCRYPTION_SECRET || "default_encryption_secret"
+        );
 
         const payload: NewTenantApiKey = {
-            tenant_id: effectiveTenantId,
+            tenant_id: tenantId,
             api_key_hash,
-            label,
-            kid,
+            api_key: encryptedApiKey, // store encrypted version
+            key_prefix: kid,
             expires_at,
         } as NewTenantApiKey;
 
@@ -42,13 +43,27 @@ export async function createApiKey(req: Request, res: Response) {
         // Do not leak api_key_hash back to client
         const { api_key_hash: _omitted, ...sanitized } = created as any;
 
-        return res.status(201).json({
-            message: "API key created successfully",
+        return sendSuccessResponse(res, 201, "API key created successfully", {
             api_key, // one-time reveal
             key: sanitized,
         });
     } catch (error: any) {
-        const status = error?.message?.includes("active API key") ? 409 : 400;
-        return res.status(status).json({ error: error.message ?? "Failed to create API key" });
+        if (error instanceof ApiError) {
+            return sendErrorResponse(res, error);
+        }
+
+        if (error?.message?.includes("already exists")) {
+            return sendErrorResponse(res, Errors.keyAlreadyExists(req.body?.kid));
+        }
+
+        if (error?.message?.includes("Tenant")) {
+            return sendErrorResponse(res, Errors.tenantNotFound(req.body?.tenant_id));
+        }
+
+        return sendErrorResponse(
+            res,
+            Errors.internalError(error?.message ?? "Failed to create API key"),
+            500
+        );
     }
 }

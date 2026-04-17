@@ -1,6 +1,6 @@
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { BaseRepository, type DrizzleClient } from "../../repositories/BaseRepository";
-import { NewWebhook, TenantApiKey, tenants, tenants_api_key, Webhook, webhooks } from "./schema";
+import { ApiKeyStatus, NewWebhook, TenantApiKey, tenants, tenants_api_key, Webhook, webhooks } from "./schema";
 import { Tenant, NewTenant, NewTenantApiKey } from "./schema";
 
 // Define the ITenantRepository interface
@@ -10,6 +10,8 @@ export interface ITenantRepository {
     getTenantById(id: number): Promise<Tenant | null>;
     updateTenant(id: number, payload: Partial<NewTenant>): Promise<Tenant>;
 }
+
+export type IUpdateTenantPayload = Omit<Partial<NewTenant>, "id" | "created_at" | "updated_at">;
 
 // Create a base repository class for tenants
 class TenantRepositoryBase extends BaseRepository<typeof tenants> { }
@@ -53,7 +55,7 @@ export class TenantRepository extends TenantRepositoryBase implements ITenantRep
     }
 
     // Method to update a tenant
-    async updateTenant(id: number, payload: Partial<NewTenant>): Promise<Tenant> {
+    async updateTenant(id: number, payload: IUpdateTenantPayload): Promise<Tenant> {
         const db = this.getDb();
         const [updated] = await db
             .update(this.table)
@@ -67,10 +69,13 @@ export class TenantRepository extends TenantRepositoryBase implements ITenantRep
 // API Key Repository interfaces and implementations will be added when implementing
 // the API key generation feature in a future iteration
 interface ITenantApiKeyRepository {
-    createApiKey(payload: NewTenantApiKey): Promise<NewTenantApiKey>;
-    updateApiKey(kid: string, payload: Partial<NewTenantApiKey>): Promise<NewTenantApiKey>;
-    deactivateApiKey(kid: string): Promise<void>;
-    removeApiKey(kid: string): Promise<void>;
+    createApiKey(payload: NewTenantApiKey): Promise<TenantApiKey>;
+    changeStatus(id: number, status: ApiKeyStatus): Promise<TenantApiKey>;
+    revokeApiKey(id: number): Promise<TenantApiKey>;
+    removeApiKey(id: number): Promise<void>;
+    getApiKeyByKey_prefix(key_prefix: string, tenantId: number): Promise<TenantApiKey | null>;
+    getApiKeysByTenantId(tenantId: number): Promise<TenantApiKey[]>;
+    getActiveApiKeyByKeyPrefix(key_prefix: string, tenantId: number): Promise<TenantApiKey | null>;
 }
 
 class TenantApiKeyRepositoryBase extends BaseRepository<typeof tenants_api_key> { };
@@ -79,74 +84,84 @@ export class TenantAPIKeyRepository extends TenantApiKeyRepositoryBase implement
     constructor(db: DrizzleClient) {
         super(db, tenants_api_key);
     }
-    async createApiKey(payload: NewTenantApiKey): Promise<NewTenantApiKey> {
+
+    async createApiKey(payload: NewTenantApiKey): Promise<TenantApiKey> {
         const db = this.getDb();
-        return db.insert(this.table).values(payload).returning().then(([created]) => created as unknown as NewTenantApiKey);
-    };
-    async updateApiKey(kid: string, payload: Partial<NewTenantApiKey>): Promise<NewTenantApiKey> {
+        const [created] = await db.insert(this.table).values(payload).returning();
+        return created as unknown as TenantApiKey;
+    }
+
+    async changeStatus(id: number, status: ApiKeyStatus): Promise<TenantApiKey> {
         const db = this.getDb();
         const [updated] = await db
             .update(this.table)
-            .set({ ...payload, updated_at: new Date().toISOString() })
-            .where(eq(this.table.kid, kid))
+            .set({ status, updated_at: new Date().toISOString() })
+            .where(eq(this.table.id, id))
             .returning();
-        return updated as unknown as NewTenantApiKey;
-    };
-    async deactivateApiKey(kid: string): Promise<void> {
+        return updated as unknown as TenantApiKey;
+    }
+
+    async revokeApiKey(id: number): Promise<TenantApiKey> {
         const db = this.getDb();
-        await db
+        const [revoked] = await db
             .update(this.table)
-            .set({ status: "inactive", updated_at: new Date().toISOString() })
-            .where(eq(this.table.kid, kid));
-    };
-    async removeApiKey(kid: string): Promise<void> {
+            .set({
+                status: "revoked" as ApiKeyStatus,
+                revoked_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+            })
+            .where(eq(this.table.id, id))
+            .returning();
+        return revoked as unknown as TenantApiKey;
+    }
+
+    async removeApiKey(id: number): Promise<void> {
         const db = this.getDb();
         await db
             .delete(this.table)
-            .where(eq(this.table.kid, kid));
+            .where(eq(this.table.id, id));
     }
 
-    async getApiKeyByKid(kid: string): Promise<NewTenantApiKey | null> {
+    async getApiKeyByKey_prefix(key_prefix: string, tenant_id: number): Promise<TenantApiKey | null> {
         const db = this.getDb();
-        const apiKey = await db
+        const [apiKey] = await db
             .select()
             .from(this.table)
-            .where(eq(this.table.kid, kid))
+            .where(and(eq(this.table.key_prefix, key_prefix), eq(this.table.tenant_id, tenant_id)))
             .limit(1)
             .execute();
-        return (apiKey[0] ?? null) as unknown as NewTenantApiKey | null;
+        return apiKey ?? null;
     }
 
-    async getApiKeysByTenantId(tenantId: number): Promise<NewTenantApiKey[]> {
+    async getApiKeysByTenantId(tenantId: number): Promise<TenantApiKey[]> {
         const db = this.getDb();
         const apiKeys = await db
             .select()
             .from(this.table)
             .where(eq(this.table.tenant_id, tenantId))
-            .execute();
-        return apiKeys;
-    }
-
-    async getApiKeysByTenantIdPaginated(
-        tenantId: number,
-        options?: { limit?: number; offset?: number }
-    ): Promise<TenantApiKey[]> {
-        const db = this.getDb();
-        const { limit, offset } = this.normalizePagination(options);
-        const apiKeys = await db
-            .select()
-            .from(this.table)
-            .where(eq(this.table.tenant_id, tenantId))
-            .limit(limit)
-            .offset(offset)
             .execute();
         return apiKeys as unknown as TenantApiKey[];
+    }
+
+    async getActiveApiKeyByKeyPrefix(key_prefix: string, tenantId: number): Promise<TenantApiKey | null> {
+        const db = this.getDb();
+        const [apiKey] = await db
+            .select()
+            .from(this.table)
+            .where(and(
+                eq(this.table.key_prefix, key_prefix),
+                eq(this.table.tenant_id, tenantId),
+                eq(this.table.status, "active" as ApiKeyStatus)
+            ))
+            .limit(1)
+            .execute();
+        return apiKey ?? null;
     }
 }
 
 
 // Webhooks repository
-class WebhookRespositoryBase extends BaseRepository<typeof webhooks> { }
+class WebhookRepositoryBase extends BaseRepository<typeof webhooks> { }
 
 interface IWebhookRepository {
     createWebhook(payload: Partial<NewWebhook>): Promise<Webhook>;
@@ -155,7 +170,7 @@ interface IWebhookRepository {
     deleteWebhooksByTenantId(tenantId: number): Promise<void>;
 }
 
-export class WebhookRepository extends WebhookRespositoryBase implements IWebhookRepository {
+export class WebhookRepository extends WebhookRepositoryBase implements IWebhookRepository {
     constructor(db: DrizzleClient) {
         super(db, webhooks);
     }

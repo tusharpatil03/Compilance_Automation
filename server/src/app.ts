@@ -1,6 +1,6 @@
 import express from "express";
 import "dotenv/config";
-import userRouter from "./modules/users/routes";
+import userRouter from "./modules/customer/routes";
 import cors from "cors";
 import tenantRoutes from "./modules/tenant/routes";
 import eventTestRoutes from "./Event/testRoute";

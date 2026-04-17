@@ -11,11 +11,8 @@ import { db } from "../../../db/connection";
 export const registerTenant = async (req: Request, res: Response): Promise<Response> => {
     try {
         const { name, email, password } = req.body;
-        
-        // Initialize repository and service
-        const authService = new AuthService();
 
-        // instance of UnitOfWork to manage transaction and repositories
+        const authService = new AuthService();
         const uow = new DrizzleUnitOfWork(db);
 
         // Register tenant and generate token
@@ -35,7 +32,7 @@ export const registerTenant = async (req: Request, res: Response): Promise<Respo
         });
     } catch (error) {
         console.error("Error in registerTenant controller:", error);
-        
+
         // Handle specific error cases
         if (error instanceof Error) {
             if (error.message.includes("already exists")) {
