@@ -1,4 +1,4 @@
-import { useAuth } from "../../features/auth/hooks/useAuth";
+import { useAuth } from "../../hooks/useAuth";
 import { Button } from "../../components/UI/Button";
 import styles from './DashBoard.module.css';
 import { Link } from 'react-router-dom';

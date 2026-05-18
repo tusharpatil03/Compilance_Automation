@@ -4,6 +4,11 @@ import { fileURLToPath, URL } from 'node:url';
 
 export default defineConfig({
 
+  server: {
+    port: 4000,
+    strictPort: true,
+  },
+
   plugins: [react()],
   resolve: {
     alias: {

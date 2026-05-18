@@ -3,6 +3,8 @@ import { Request, Response } from "express";
 import { AuthService } from "../services/AuthService";
 import { DrizzleUnitOfWork } from "../../../repositories/UnitOfWork";
 import { db } from "../../../db/connection";
+import { sendErrorResponse, sendSuccessResponse, ApiError } from "../../../utils/errorHandler";
+import { ErrorCode } from "../../../utils/APIContract";
 
 /**
  * Register a new tenant controller
@@ -18,35 +20,25 @@ export const registerTenant = async (req: Request, res: Response): Promise<Respo
         // Register tenant and generate token
         const { tenant, token } = await authService.registerTenant(uow, { name, email, password });
 
-        return res.status(201).json({
-            success: true,
-            message: "Tenant registered successfully",
-            data: {
-                tenant,
-                auth: {
-                    accessToken: token,
-                    tokenType: "Bearer",
-                    expiresIn: "1h",
-                },
+        return sendSuccessResponse(res, 201, "Tenant registered successfully", {
+            tenant,
+            auth: {
+                accessToken: token,
+                tokenType: "Bearer",
+                expiresIn: "1h",
             },
         });
     } catch (error) {
         console.error("Error in registerTenant controller:", error);
 
-        // Handle specific error cases
-        if (error instanceof Error) {
-            if (error.message.includes("already exists")) {
-                return res.status(409).json({
-                    success: false,
-                    message: error.message,
-                });
-            }
+        if (error instanceof ApiError) {
+            return sendErrorResponse(res, error);
         }
 
-        return res.status(500).json({
-            success: false,
-            message: "Error registering tenant",
-            error: error instanceof Error ? error.message : String(error),
-        });
+        if (error instanceof Error && error.message.includes("already exists")) {
+            return sendErrorResponse(res, new ApiError(ErrorCode.TENANT_ALREADY_EXISTS, `Tenant with email '${req.body?.email}' already exists`, 409, "email"));
+        }
+
+        return sendErrorResponse(res, new ApiError(ErrorCode.INTERNAL_ERROR, "Error registering tenant", 500));
     }
 };

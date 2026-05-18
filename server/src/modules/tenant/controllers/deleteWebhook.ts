@@ -1,36 +1,27 @@
 import { Request, Response } from "express";
 import type { AuthenticatedRequest } from "../middlewares/auth";
 import { TenantApiServices } from "../services/TenantApiServices";
-import { WebhookRepository } from "../respository";
-import { db } from "../../../db/connection";
-import { sendErrorResponse, sendSuccessResponse, Errors, ApiError } from "../../../utils/errorHandler";
+import { sendErrorResponse, sendSuccessResponse, ApiError } from "../../../utils/errorHandler";
+import { ErrorCode } from "../../../utils/APIContract";
+
 
 export async function deleteWebhook(req: Request, res: Response) {
     try {
-        const { id } = req.params;
+        const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
 
         if (!id || isNaN(Number(id))) {
-            return sendErrorResponse(res, Errors.invalidId(id || "undefined", "webhook ID"));
+            return sendErrorResponse(res, new ApiError(ErrorCode.INVALID_ID, `Invalid webhook ID: ${id || "undefined"}. Must be a valid number`, 400, "webhook ID"));
         }
 
         const authReq = req as AuthenticatedRequest;
         const tenantId = authReq.tenant?.id;
 
         if (!tenantId) {
-            return sendErrorResponse(res, Errors.authRequired());
+            return sendErrorResponse(res, new ApiError(ErrorCode.AUTH_REQUIRED, "Authentication required", 401));
         }
 
-        // Verify webhook belongs to tenant
-        const webhookRepository = new WebhookRepository(db);
-        const webhooks = await webhookRepository.getWebhooksByTenantId(tenantId);
-        const webhook = webhooks.find((w) => w.id === Number(id));
-
-        if (!webhook) {
-            return sendErrorResponse(res, Errors.webhookNotFound(), 404);
-        }
-
-        // Delete webhook
-        await webhookRepository.deleteWebhook(Number(id));
+        const service = new TenantApiServices();
+        await service.deleteWebhook(Number(id), tenantId);
 
         return sendSuccessResponse(res, 200, "Webhook deleted successfully");
     } catch (error: any) {
@@ -38,14 +29,10 @@ export async function deleteWebhook(req: Request, res: Response) {
             return sendErrorResponse(res, error);
         }
 
-        if (error?.message?.includes("not found")) {
-            return sendErrorResponse(res, Errors.webhookNotFound(), 404);
+        if (error?.message?.includes("not found") || error?.message?.includes("does not belong")) {
+            return sendErrorResponse(res, new ApiError(ErrorCode.WEBHOOK_NOT_FOUND, "Webhook not found", 404));
         }
 
-        return sendErrorResponse(
-            res,
-            Errors.internalError(error?.message ?? "Failed to delete webhook"),
-            500
-        );
+        return sendErrorResponse(res, new ApiError(ErrorCode.INTERNAL_ERROR, error?.message ?? "Failed to delete webhook", 500));
     }
 }

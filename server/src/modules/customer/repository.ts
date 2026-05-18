@@ -1,6 +1,6 @@
-import { risk_profile, RiskProfile, users } from "./schema";
+import { risk_profile, RiskProfile, customers } from "./schema";
 import { BaseRepository } from "../../repositories/BaseRepository";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { User, NewUser } from "./schema"
 import type { DrizzleClient } from "../../repositories/BaseRepository";
 
@@ -9,14 +9,14 @@ interface IQueryParameters {
     offset?: number;
 }
 
-type QueryTenantUsers = IQueryParameters & {
+type QueryTenantcustomers = IQueryParameters & {
     tenant_id: number;
 }
 
 export interface IUserRepository {
     getUserById(external_id: string): Promise<User | null>;
     getUserByExternalIdAndTenant(external_id: string, tenant_id: number): Promise<User | null>;
-    getUsers(params: QueryTenantUsers): Promise<User[]>;
+    getcustomers(params: QueryTenantcustomers): Promise<User[]>;
     createUser(payload: NewUser): Promise<User>;
     updateUser(external_id: string, payload: Partial<NewUser>): Promise<User>;
     updateUserForTenant(external_id: string, tenant_id: number, payload: Partial<NewUser>): Promise<User>;
@@ -24,20 +24,19 @@ export interface IUserRepository {
 }
 
 
-export class UserRepository extends BaseRepository<typeof users> implements IUserRepository {
+export class UserRepository extends BaseRepository<typeof customers> implements IUserRepository {
     constructor(db: DrizzleClient) {
-        super(db, users);
+        super(db, customers);
     }
 
     async createUser(payload: NewUser): Promise<User> {
-        console.log("Inserting user with payload", payload);
-        try{
+        try {
             const db = this.getDb();
-            const [created] = await db.insert(users).values(payload as NewUser).returning();
+            const [created] = await db.insert(customers).values(payload as NewUser).returning();
             return created as unknown as User;
-        }catch (err: any) {
+        } catch (err: any) {
             console.error("Error inserting user", { payload, error: err });
-            return null as unknown as User; // or throw an error depending on your error handling strategy
+            throw err;
         }
     }
 
@@ -48,7 +47,7 @@ export class UserRepository extends BaseRepository<typeof users> implements IUse
         }
         try {
             // Ensure limit is numeric to avoid driver/prepare mismatch
-            const user = await db.select().from(users).where(eq(users.external_customer_id, external_id)).limit(1).execute();
+            const user = await db.select().from(customers).where(eq(customers.external_customer_id, external_id)).limit(1).execute();
             return (user[0] ?? null) as unknown as User | null;
         } catch (err: any) {
             // Re-throw with extra context to make runtime debugging easier
@@ -67,8 +66,8 @@ export class UserRepository extends BaseRepository<typeof users> implements IUse
         }
         const result = await db
             .select()
-            .from(users)
-            .where(eq(users.external_customer_id, external_id))
+            .from(customers)
+            .where(and(eq(customers.external_customer_id, external_id), eq(customers.tenant_id, tenant_id)))
             .limit(1)
             .execute();
 
@@ -79,26 +78,26 @@ export class UserRepository extends BaseRepository<typeof users> implements IUse
     }
 
 
-    async getUsers(params: QueryTenantUsers): Promise<User[]> {
+    async getcustomers(params: QueryTenantcustomers): Promise<User[]> {
         const db = this.getDb();
         const { limit, offset } = this.normalizePagination(params);
         const tenant_id = params.tenant_id;
-        const list = await db.select().from(users).where(eq(users.tenant_id, tenant_id)).limit(limit).offset(offset).execute();
+        const list = await db.select().from(customers).where(eq(customers.tenant_id, tenant_id)).limit(limit).offset(offset).execute();
         return list as unknown as User[];
     }
 
     async updateUser(external_id: string, payload: Partial<NewUser>): Promise<User> {
         const db = this.getDb();
-        const [updated] = await db.update(users).set(payload as Partial<NewUser>).where(eq(users.external_customer_id, external_id)).returning();
+        const [updated] = await db.update(customers).set(payload as Partial<NewUser>).where(eq(customers.external_customer_id, external_id)).returning();
         return updated as unknown as User;
     }
 
     async updateUserForTenant(external_id: string, tenant_id: number, payload: Partial<NewUser>): Promise<User> {
         const db = this.getDb();
         const [updated] = await db
-            .update(users)
+            .update(customers)
             .set(payload as Partial<NewUser>)
-            .where(eq(users.external_customer_id, external_id))
+            .where(and(eq(customers.external_customer_id, external_id), eq(customers.tenant_id, tenant_id)))
             .returning();
 
         const user = updated as unknown as User;
@@ -110,7 +109,7 @@ export class UserRepository extends BaseRepository<typeof users> implements IUse
 
     async deleteUserById(id: number): Promise<void> {
         const db = this.getDb();
-        await db.delete(users).where(eq(users.id, id)).execute();
+        await db.delete(customers).where(eq(customers.id, id)).execute();
         return;
     }
 }

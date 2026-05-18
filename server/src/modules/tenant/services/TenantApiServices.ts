@@ -2,6 +2,8 @@ import { db } from "../../../db/connection";
 import { TenantAPIKeyRepository, TenantRepository, WebhookRepository } from "../respository";
 import { NewTenantApiKey, NewWebhook, TenantApiKey, Webhook } from "../schema";
 import { createHmac } from "crypto";
+import { ApiError } from "../../../utils/errorHandler";
+import { ErrorCode } from "../../../utils/APIContract";
 
 interface ITenantApiServices {
     createApiKey(payload: NewTenantApiKey): Promise<TenantApiKey>;
@@ -111,8 +113,8 @@ export class TenantApiServices implements ITenantApiServices {
         await this.tenantApiKeyRepository.removeApiKey(existingKey.id);
     }
 
-    listApiKeys(tenantId: number, options?: { limit?: number; offset?: number; }): Promise<TenantApiKey[]> {
-        return this.tenantApiKeyRepository.getApiKeysByTenantId(tenantId);
+    listApiKeys(tenantId: number, options?: { limit?: number; offset?: number }): Promise<TenantApiKey[]> {
+        return this.tenantApiKeyRepository.getApiKeysByTenantId(tenantId, options);
     }
 
     async validateApiKey(key_prefix: string, tenantId: number): Promise<boolean> {
@@ -153,6 +155,18 @@ export class TenantApiServices implements ITenantApiServices {
         }
 
         const supportedEvents = ["api_key.created", "api_key.deactivated", "api_key.rotated", "tenant.updated"];
+        const requestedEvents = payload.events ?? [];
+        const selectedEvents = requestedEvents.length
+            ? requestedEvents.filter((event) => supportedEvents.includes(event))
+            : supportedEvents;
+
+        if (requestedEvents.length > 0 && selectedEvents.length === 0) {
+            throw new ApiError(
+                ErrorCode.VALIDATION_ERROR,
+                "No supported events provided",
+                400
+            );
+        }
 
         const secret = createHmac("sha256", process.env.WEBHOOK_SECRET || "default_secret").update(`${payload.tenant_id}:${payload.url}:${Date.now()}`).digest("hex");
 
@@ -160,7 +174,7 @@ export class TenantApiServices implements ITenantApiServices {
         const toCreate: NewWebhook = {
             tenant_id: payload.tenant_id,
             url: payload.url,
-            events: supportedEvents,
+            events: selectedEvents,
             secret,
         } as NewWebhook;
 
@@ -169,7 +183,7 @@ export class TenantApiServices implements ITenantApiServices {
     }
 
     getWebHooks(tenantId: number, options?: { limit?: number; offset?: number; }): Promise<Webhook[]> {
-        return this.webhookRepository.getWebhooksByTenantId(tenantId);
+        return this.webhookRepository.getWebhooksByTenantId(tenantId, options);
     }
 
     async deleteWebhook(id: number, tenantId: number): Promise<void> {

@@ -1,14 +1,16 @@
 import { RiskProfileRepository, UserRepository } from "../repository";
 import { NewUser, User } from "../schema";
 import { UnitOfWork } from "../../../repositories/UnitOfWork";
+import { ApiError } from "../../../utils/errorHandler";
+import { ErrorCode } from "../../../utils/APIContract";
 
 export class UserServices {
     public async createUser(uow: UnitOfWork, payload: NewUser): Promise<User> {
         if (!payload.tenant_id) {
-            throw new Error("Tenant id is required");
+            throw new ApiError(ErrorCode.MISSING_REQUIRED_FIELD, "Missing required field: tenant_id", 400, "tenant_id");
         }
         if (!payload.external_customer_id) {
-            throw new Error("external_customer_id is required");
+            throw new ApiError(ErrorCode.MISSING_REQUIRED_FIELD, "Missing required field: external_customer_id", 400, "external_customer_id");
         }
 
         // Always run sync inside a transaction so user + risk_profile are consistent.

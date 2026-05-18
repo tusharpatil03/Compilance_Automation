@@ -1,55 +1,52 @@
 // src/contexts/AuthContext.tsx
 import { createContext, useState, type ReactNode } from "react";
-import type { Tenant, AuthPayload } from "../features/auth/types/auth.types";
-import { 
-  saveToLocalStorage, 
-  getFromLocalStorage, 
-  removeFromLocalStorage 
-} from "../utils/storage";
-
-const TOKEN_KEY = 'auth_token';
-const TENANT_KEY = 'tenant_data';
+import type { Tenant } from "../types/auth.types";
+import { clearLocalStorage, saveToLocalStorage } from "../utils/storage";
+import { useNavigate } from "react-router-dom";
 
 export interface AuthContextValue {
-  tenant: Tenant | null;
-  token: string | null;
+  tenant?: Tenant;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (tenant: Tenant, auth: AuthPayload) => void;
+  login: (tenant: Tenant) => void;
   logout: () => void;
 }
 
-const AuthContext = createContext<AuthContextValue | undefined>(
-  undefined,
-);
+const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   // Load auth state from localStorage on initial render
-  const storedToken = getFromLocalStorage<string>(TOKEN_KEY);
-  const storedTenant = getFromLocalStorage<Tenant>(TENANT_KEY);
-
-  const [tenant, setTenant] = useState<Tenant | null>(storedTenant);
-  const [token, setToken] = useState<string | null>(storedToken);
   const isLoading = false;
 
-  const login = (tenantData: Tenant, auth: AuthPayload) => {
-    setTenant(tenantData);
-    setToken(auth.accessToken);
-    saveToLocalStorage(TOKEN_KEY, auth.accessToken);
-    saveToLocalStorage(TENANT_KEY, tenantData);
+  const [tenant, setTenant] = useState<Tenant | undefined>(() => {
+    const storedTenant = localStorage.getItem("tenant");
+    return storedTenant ? JSON.parse(storedTenant) as Tenant : undefined;
+  });
+
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
+    return localStorage.getItem("auth") === "true";
+  });
+
+  const navigate = useNavigate();
+
+  const login = (tenant: Tenant) => {
+    setTenant(tenant);
+    setIsAuthenticated(true);
+    saveToLocalStorage("tenant", tenant);
+    saveToLocalStorage("auth", "true");
+    navigate("/dashboard");
   };
 
   const logout = () => {
-    setTenant(null);
-    setToken(null);
-    removeFromLocalStorage(TOKEN_KEY);
-    removeFromLocalStorage(TENANT_KEY);
+    clearLocalStorage();
+    setTenant(undefined);
+    setIsAuthenticated(false);
+    navigate("/login");
   };
 
   const value: AuthContextValue = {
     tenant,
-    token,
-    isAuthenticated: !!token && !!tenant,
+    isAuthenticated,
     isLoading,
     login,
     logout,

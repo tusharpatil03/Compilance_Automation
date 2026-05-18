@@ -26,17 +26,10 @@ export interface LoginRequest {
   password: string;
 }
 
-export interface ApiResponse<T = unknown> {
-  success: boolean;
-  message: string;
-  data?: T;
-  error?: string | Record<string, string>;
-  errors?: Record<string, string>; // For validation errors
-}
-
 export interface AuthResponse {
   tenant: Tenant;
   auth: AuthPayload;
+  success: boolean;
 }
 
 export interface FormErrors {

@@ -14,14 +14,9 @@ export interface ApiKeyItem {
 }
 
 export interface PaginationMeta {
-  limit: number;
-  offset: number;
-  count: number;
-}
-
-export interface PaginatedResponse<T> {
-  data: T[];
-  pagination: PaginationMeta;
+  limit: number,
+  offset: number,
+  count: number,
 }
 
 export interface CreateApiKeyRequest {
@@ -30,15 +25,10 @@ export interface CreateApiKeyRequest {
 }
 
 export interface CreateApiKeyResponse {
-  message: string;
   api_key: string; // raw API key string, shown only once
   key: ApiKeyItem;
 }
 
 export interface DeactivateApiKeyRequest {
   status: 'inactive';
-}
-
-export interface SimpleMessageResponse {
-  message: string;
 }

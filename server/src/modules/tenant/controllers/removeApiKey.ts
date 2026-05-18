@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { TenantApiServices } from "../services/TenantApiServices";
-import { sendErrorResponse, sendSuccessResponse, Errors, ApiError } from "../../../utils/errorHandler";
+import { sendErrorResponse, sendSuccessResponse, ApiError } from "../../../utils/errorHandler";
+import { ErrorCode } from "../../../utils/APIContract";
 import type { AuthenticatedRequest } from "../middlewares/auth";
 
 export async function removeApiKey(req: Request, res: Response) {
@@ -8,14 +9,14 @@ export async function removeApiKey(req: Request, res: Response) {
         const { kid } = req.body as { kid?: string };
 
         if (!kid) {
-            return sendErrorResponse(res, Errors.missingRequired("kid"));
+            return sendErrorResponse(res, new ApiError(ErrorCode.MISSING_REQUIRED_FIELD, "Missing required field: kid", 400, "kid"));
         }
 
         const authReq = req as AuthenticatedRequest;
         const tenantId = authReq.tenant?.id;
 
         if (!tenantId) {
-            return sendErrorResponse(res, Errors.authRequired());
+            return sendErrorResponse(res, new ApiError(ErrorCode.AUTH_REQUIRED, "Authentication required", 401));
         }
 
         const service = new TenantApiServices();
@@ -28,17 +29,13 @@ export async function removeApiKey(req: Request, res: Response) {
         }
 
         if (error?.message?.includes("Forbidden")) {
-            return sendErrorResponse(res, Errors.keyDoesNotBelong());
+            return sendErrorResponse(res, new ApiError(ErrorCode.KEY_DOES_NOT_BELONG, "This key does not belong to your tenant", 403));
         }
 
         if (error?.message?.includes("not exist")) {
-            return sendErrorResponse(res, Errors.apiKeyNotFound(req.body?.kid), 404);
+            return sendErrorResponse(res, new ApiError(ErrorCode.API_KEY_NOT_FOUND, `API key '${req.body?.kid}' not found`, 404));
         }
 
-        return sendErrorResponse(
-            res,
-            Errors.internalError(error?.message ?? "Failed to remove API key"),
-            500
-        );
+        return sendErrorResponse(res, new ApiError(ErrorCode.INTERNAL_ERROR, error?.message ?? "Failed to remove API key", 500));
     }
 }

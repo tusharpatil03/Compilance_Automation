@@ -70,7 +70,7 @@ export const webhooks = pgTable("webhooks", {
     id: integer().primaryKey().generatedAlwaysAsIdentity(),
     tenant_id: integer().notNull().references((): AnyPgColumn => tenants.id),
     url: varchar({ length: 2048 }).notNull(),
-    events: jsonb("events").notNull(), // array of event types this webhook subscribes to
+    events: jsonb("events").$type<string[]>(), // array of event types this webhook subscribes to
     secret: varchar({ length: 255 }).notNull(), // secret for signing webhook payloads
     created_at: timestamp({ mode: "string" }).notNull().defaultNow(),
     updated_at: timestamp({ mode: "string" }).notNull().defaultNow(),

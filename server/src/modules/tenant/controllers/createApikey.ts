@@ -2,8 +2,9 @@ import { Request, Response } from "express";
 import { TenantApiServices } from "../services/TenantApiServices";
 import { NewTenantApiKey } from "../schema";
 import { encryptData, generateApiKey, hashApiKey } from "../../../utils/security";
-import { sendErrorResponse, sendSuccessResponse, Errors, ApiError } from "../../../utils/errorHandler";
+import { sendErrorResponse, sendSuccessResponse, ApiError } from "../../../utils/errorHandler";
 import type { AuthenticatedRequest } from "../middlewares/auth";
+import { ErrorCode } from "../../../utils/APIContract";
 
 export async function createApiKey(req: Request, res: Response) {
     try {
@@ -12,11 +13,18 @@ export async function createApiKey(req: Request, res: Response) {
             expires_at?: string;
         };
 
+        if (!kid) {
+            return sendErrorResponse(
+                res,
+                new ApiError(ErrorCode.MISSING_REQUIRED_FIELD, "Missing required field: kid", 400, "kid")
+            );
+        }
+
         const authReq = req as AuthenticatedRequest;
         const tenantId = authReq.tenant?.id;
 
         if (!tenantId) {
-            return sendErrorResponse(res, Errors.authRequired());
+            return sendErrorResponse(res, new ApiError(ErrorCode.AUTH_REQUIRED, "Authentication required", 401));
         }
 
         // Generate secret and hash
@@ -53,17 +61,13 @@ export async function createApiKey(req: Request, res: Response) {
         }
 
         if (error?.message?.includes("already exists")) {
-            return sendErrorResponse(res, Errors.keyAlreadyExists(req.body?.kid));
+            return sendErrorResponse(res, new ApiError(ErrorCode.KEY_ALREADY_EXISTS, `API key with ID '${req.body?.kid}' already exists for this tenant`, 409, "kid"));
         }
 
         if (error?.message?.includes("Tenant")) {
-            return sendErrorResponse(res, Errors.tenantNotFound(req.body?.tenant_id));
+            return sendErrorResponse(res, new ApiError(ErrorCode.TENANT_NOT_FOUND, `Tenant with ID ${req.body?.tenant?.id} not found`, 404));
         }
 
-        return sendErrorResponse(
-            res,
-            Errors.internalError(error?.message ?? "Failed to create API key"),
-            500
-        );
+        return sendErrorResponse(res, new ApiError(ErrorCode.INTERNAL_ERROR, error?.message ?? "Failed to create API key", 500));
     }
 }

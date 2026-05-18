@@ -74,7 +74,7 @@ interface ITenantApiKeyRepository {
     revokeApiKey(id: number): Promise<TenantApiKey>;
     removeApiKey(id: number): Promise<void>;
     getApiKeyByKey_prefix(key_prefix: string, tenantId: number): Promise<TenantApiKey | null>;
-    getApiKeysByTenantId(tenantId: number): Promise<TenantApiKey[]>;
+    getApiKeysByTenantId(tenantId: number, options?: { limit?: number; offset?: number }): Promise<TenantApiKey[]>;
     getActiveApiKeyByKeyPrefix(key_prefix: string, tenantId: number): Promise<TenantApiKey | null>;
 }
 
@@ -133,12 +133,15 @@ export class TenantAPIKeyRepository extends TenantApiKeyRepositoryBase implement
         return apiKey ?? null;
     }
 
-    async getApiKeysByTenantId(tenantId: number): Promise<TenantApiKey[]> {
+    async getApiKeysByTenantId(tenantId: number, options?: { limit?: number; offset?: number }): Promise<TenantApiKey[]> {
         const db = this.getDb();
+        const { limit, offset } = this.normalizePagination(options);
         const apiKeys = await db
             .select()
             .from(this.table)
             .where(eq(this.table.tenant_id, tenantId))
+            .limit(limit)
+            .offset(offset)
             .execute();
         return apiKeys as unknown as TenantApiKey[];
     }
@@ -165,7 +168,7 @@ class WebhookRepositoryBase extends BaseRepository<typeof webhooks> { }
 
 interface IWebhookRepository {
     createWebhook(payload: Partial<NewWebhook>): Promise<Webhook>;
-    getWebhooksByTenantId(tenantId: number): Promise<Webhook[]>;
+    getWebhooksByTenantId(tenantId: number, options?: { limit?: number; offset?: number }): Promise<Webhook[]>;
     deleteWebhook(id: number): Promise<void>;
     deleteWebhooksByTenantId(tenantId: number): Promise<void>;
 }
@@ -181,12 +184,15 @@ export class WebhookRepository extends WebhookRepositoryBase implements IWebhook
         return created as unknown as Webhook;
     }
 
-    async getWebhooksByTenantId(tenantId: number): Promise<Webhook[]> {
+    async getWebhooksByTenantId(tenantId: number, options?: { limit?: number; offset?: number }): Promise<Webhook[]> {
         const db = this.getDb();
+        const { limit, offset } = this.normalizePagination(options);
         const hooks = await db
             .select()
             .from(this.table)
             .where(eq(this.table.tenant_id, tenantId))
+            .limit(limit)
+            .offset(offset)
             .execute();
         return hooks as unknown as Webhook[];
     }

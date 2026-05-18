@@ -1,10 +1,11 @@
-import { UserRepository } from "../repository";
 import { db } from "../../../db/connection";
 import { UserServices } from "../services/UserServices";
 import { Request, Response } from "express"
 import { NewUser } from "../schema";
 import { SyncUserInput } from "../zodschema";
 import { DrizzleUnitOfWork, UnitOfWork } from "../../../repositories/UnitOfWork";
+import { sendErrorResponse, sendSuccessResponse, ApiError } from "../../../utils/errorHandler";
+import { ErrorCode } from "../../../utils/APIContract";
 
 export class UserController {
   public userServices: UserServices;
@@ -21,10 +22,14 @@ export class UserController {
 
       const tenantId = (req as any).tenant?.id;
       if (!tenantId) {
-        return res.status(401).json({
-          success: false,
-          message: "Unauthorized: tenant is missing",
-        });
+        return sendErrorResponse(
+          res,
+          new ApiError(
+            ErrorCode.AUTH_REQUIRED,
+            "Authentication required",
+            401
+          )
+        );
       }
 
       const now = new Date().toISOString();
@@ -43,17 +48,27 @@ export class UserController {
 
       //create or update user based on external_customer_id
       const user = await this.userServices.createUser(this.uow, payload);
-      return res.status(200).json({
-        success: true,
-        message: "User synced successfully",
-        data: user,
-      });
+      return sendSuccessResponse(res, 200, "User synced successfully", user);
     } catch (error: any) {
-      const status = error?.message?.includes("Already Exists") ? 409 : 500;
-      return res.status(status).json({
-        success: false,
-        message: error?.message ?? "failed to sync new user",
-      });
+      if (error instanceof ApiError) {
+        return sendErrorResponse(res, error);
+      }
+
+      if (error?.message?.includes("Already Exists")) {
+        return sendErrorResponse(
+          res,
+          new ApiError(ErrorCode.CONFLICT, error.message, 409)
+        );
+      }
+
+      return sendErrorResponse(
+        res,
+        new ApiError(
+          ErrorCode.INTERNAL_ERROR,
+          error?.message ?? "failed to sync new user",
+          500
+        )
+      );
     }
   }
 }

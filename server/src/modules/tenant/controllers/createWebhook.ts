@@ -1,7 +1,8 @@
 import { Request, Response } from "express";
 import { TenantApiServices } from "../services/TenantApiServices";
-import { sendErrorResponse, sendSuccessResponse, Errors, ApiError } from "../../../utils/errorHandler";
+import { sendErrorResponse, sendSuccessResponse, ApiError } from "../../../utils/errorHandler";
 import type { AuthenticatedRequest } from "../middlewares/auth";
+import { ErrorCode } from "../../../utils/APIContract";
 
 export async function createWebhook(req: Request, res: Response) {
     try {
@@ -11,14 +12,14 @@ export async function createWebhook(req: Request, res: Response) {
         };
 
         if (!url) {
-            return sendErrorResponse(res, Errors.missingRequired("url"));
+            return sendErrorResponse(res, new ApiError(ErrorCode.MISSING_REQUIRED_FIELD, "Missing required field: url", 400, "url"));
         }
 
         const authReq = req as AuthenticatedRequest;
         const tenantId = authReq.tenant?.id;
 
         if (!tenantId) {
-            return sendErrorResponse(res, Errors.authRequired());
+            return sendErrorResponse(res, new ApiError(ErrorCode.AUTH_REQUIRED, "Authentication required", 401));
         }
 
         const tenantApiServices = new TenantApiServices();
@@ -43,17 +44,13 @@ export async function createWebhook(req: Request, res: Response) {
         }
 
         if (error?.message?.includes("already exists")) {
-            return sendErrorResponse(res, Errors.webhookAlreadyExists(req.body?.url), 409);
+            return sendErrorResponse(res, new ApiError(ErrorCode.WEBHOOK_ALREADY_EXISTS, `Webhook for URL '${req.body?.url}' already exists`, 409, "url"));
         }
 
         if (error?.message?.includes("Tenant")) {
-            return sendErrorResponse(res, Errors.tenantNotFound(req.body?.tenant_id), 404);
+            return sendErrorResponse(res, new ApiError(ErrorCode.TENANT_NOT_FOUND, `Tenant with ID ${req.body?.tenant?.id || "undefined"} not found`, 404));
         }
 
-        return sendErrorResponse(
-            res,
-            Errors.internalError(error?.message ?? "Failed to create webhook"),
-            500
-        );
+        return sendErrorResponse(res, new ApiError(ErrorCode.INTERNAL_ERROR, error?.message ?? "Failed to create webhook", 500));
     }
 }

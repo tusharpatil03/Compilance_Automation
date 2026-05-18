@@ -1,107 +1,94 @@
-import { useState, type FormEvent } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { InputField } from '../../../components/UI/InputField';
-import { Button } from '../../../components/UI/Button';
-import { loginService } from '../services/authServices';
-import { useAuth } from '../hooks/useAuth';
-import type { FormErrors } from '../types/auth.types';
-import { validateEmailFormat } from '../utils/authValidation';
-import styles from './LoginForm.module.css';
-import axios from 'axios';
+import { useCallback, useState, type FormEvent } from "react";
+import { Link } from "react-router-dom";
+import { InputField } from "../../../components/Form/InputField";
+import { Button } from "../../../components/UI/Button";
+import { useFormValidation } from "../../../hooks/useValidation";
+import { validateEmail, validateRequired } from "../../../utils/validation";
+import styles from "./LoginForm.module.css";
+import { useLogin } from "../hooks/useLogin";
+import { useForm } from "../hooks/useForm";
+import type { LoginRequest } from "../../../types/auth.types";
+import { useAuth } from "../../../hooks/useAuth";
 
 export function LoginForm() {
-  const navigate = useNavigate();
+  const { loading, handleLogin } = useLogin();
+  const [error, setCommonError] = useState<string| null>(null);
   const { login } = useAuth();
 
-  const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-  });
+  const {
+    values,
+    handleChange,
+    errors: fieldErrors,
+    clearErrors,
+  } = useForm<LoginRequest>({ email: "", password: "" } as LoginRequest);
 
-  const [errors, setErrors] = useState<FormErrors>({});
-  const [isLoading, setIsLoading] = useState(false);
-  const [apiError, setApiError] = useState<string>('');
+  // Client-side validation hook
+  const {
+    errors: validationErrors,
+    validateFields,
+    clearAllErrors,
+    setError,
+  } = useFormValidation();
 
-  const validateForm = (): boolean => {
-    const newErrors: FormErrors = {};
+  const handleSubmit = useCallback(
+    async (e: FormEvent<HTMLFormElement>) => {
+      e.preventDefault();
 
-    // Email validation
-    if (!formData.email.trim()) {
-      newErrors.email = 'Email is required';
-    } else if (!validateEmailFormat(formData.email)) {
-      newErrors.email = 'Please enter a valid email address';
-    }
+      clearErrors();
+      setCommonError(null);
 
-    // Password validation
-    if (!formData.password) {
-      newErrors.password = 'Password is required';
-    }
+      // Client-side validation
+      const validations = {
+        email: validateEmail(values.email),
+        password: validateRequired(values.password, "Password"),
+      };
 
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-    // Clear error for this field when user starts typing
-    if (errors[name]) {
-      setErrors((prev) => ({ ...prev, [name]: '' }));
-    }
-    // Clear API error when user makes changes
-    if (apiError) {
-      setApiError('');
-    }
-  };
-
-  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setApiError('');
-
-    if (!validateForm()) {
-      return;
-    }
-
-    setIsLoading(true);
-
-    try {
-      const response = await loginService({
-        email: formData.email,
-        password: formData.password,
-      });
-
-      if (response.success && response.data) {
-        // Login the user with the response data
-        login(response.data.tenant, response.data.auth);
-        navigate('/dashboard');
+      if (!validateFields(validations)) {
+        return;
       } else {
-        setApiError(response.message || 'Login failed');
+        clearAllErrors();
       }
-    } catch (error) {
-      console.error('Login error:', error);
-      
-      if (axios.isAxiosError(error) && error.response) {
-        const responseData = error.response.data;
-        
-        // Handle validation errors
-        if (responseData.errors) {
-          setErrors(responseData.errors);
+
+      //send login request
+      const result = await handleLogin(values);
+
+      if (result.ok) {
+        login(result.response.data.tenant);
+      } else {
+        if (
+          result.error.type === "validation" &&
+          result.error.field !== ""
+        ) {
+          setError(result.error.field, result.error.message);
         } else {
-          setApiError(responseData.message || 'Invalid email or password');
+          setCommonError(result.error.message || "Something went wrong");
         }
-      } else {
-        setApiError('An unexpected error occurred. Please try again.');
       }
-    } finally {
-      setIsLoading(false);
-    }
+
+      return;
+    },
+    [
+      values,
+      validateFields,
+      handleLogin,
+      clearAllErrors,
+      login,
+      clearErrors,
+      setError,
+    ],
+  );
+
+  // Merge client-side and server-side errors, with server errors taking precedence
+  const displayErrors = {
+    email: fieldErrors.email || validationErrors.email,
+    password: fieldErrors.password || validationErrors.password,
   };
 
   return (
     <form onSubmit={handleSubmit} className={styles.form}>
-      {apiError && (
-        <div className={styles.errorAlert}>
-          {apiError}
+      {error && (
+        <div className={styles.errorAlert} role="alert" tabIndex={0}>
+          {error}
         </div>
       )}
 
@@ -109,37 +96,34 @@ export function LoginForm() {
         label="Email Address"
         name="email"
         type="email"
-        value={formData.email}
+        value={values.email}
         onChange={handleChange}
-        error={errors.email}
+        error={displayErrors.email}
         placeholder="Enter your email"
-        disabled={isLoading}
+        disabled={loading}
         autoComplete="email"
+        required
       />
 
       <InputField
         label="Password"
         name="password"
         type="password"
-        value={formData.password}
+        value={values.password}
         onChange={handleChange}
-        error={errors.password}
+        error={displayErrors.password}
         placeholder="Enter your password"
-        disabled={isLoading}
+        disabled={loading}
         autoComplete="current-password"
+        required
       />
 
-      <Button
-        type="submit"
-        fullWidth
-        isLoading={isLoading}
-        disabled={isLoading}
-      >
+      <Button type="submit" fullWidth isLoading={loading} disabled={loading}>
         Login
       </Button>
 
       <div className={styles.footer}>
-        Don't have an account?{' '}
+        Don't have an account?{" "}
         <Link to="/register" className={styles.link}>
           Register here
         </Link>

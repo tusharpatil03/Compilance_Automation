@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { ZodSchema } from "zod";
-import { ErrorCode } from "./errorHandler";
+import { ApiError, sendErrorResponse } from "./errorHandler";
+import { ErrorCode } from "./APIContract";
 
 type ValidationSource = "body" | "query" | "params";
 
@@ -16,15 +17,26 @@ export const validagteBody =
 
             const result = schema.safeParse(dataToValidate);
             if (!result.success) {
-                const formattedErrors = result.error.flatten().fieldErrors;
+                const validationIssues = result.error.issues.map((issue) => ({
+                    field: issue.path.length > 0 ? issue.path.join(".") : source,
+                    message: issue.message,
+                    code: issue.code,
+                }));
+                const primaryIssue = validationIssues[0];
 
-                return res.status(400).json({
-                    success: false,
-                    message: "Validation error",
-                    code: ErrorCode.VALIDATION_ERROR,
-                    errors: formattedErrors,
-                });
-            }
+                return sendErrorResponse(
+                    res,
+                    new ApiError(
+                        ErrorCode.VALIDATION_ERROR,
+                        primaryIssue
+                            ? primaryIssue.message
+                            : "Validation failed",
+                        400,
+                        primaryIssue?.field,
+                        validationIssues,
+                    ),
+                );
+            }   
 
             // Overwrite the data with parsed data
             if (source === "query") {

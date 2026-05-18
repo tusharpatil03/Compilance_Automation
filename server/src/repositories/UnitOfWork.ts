@@ -17,12 +17,19 @@ export class DrizzleUnitOfWork implements UnitOfWork {
         return this.db.transaction(async (tx) => {
             this.tx = tx;
 
-            //execute the work function with the unit of work instance
-            return await work(this);
+            try {
+                //execute the work function with the unit of work instance
+                return await work(this);
+            } finally {
+                this.tx = undefined;
+            }
         });
     }
 
     getRepository<T>(Repo: new (tx: any) => T): T {
+        if (!this.tx) {
+            throw new Error("UnitOfWork transaction is not active");
+        }
         return new Repo(this.tx)
     }
 }

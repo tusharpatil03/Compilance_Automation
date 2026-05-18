@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { InputField } from '../../../components/UI/InputField';
+import { InputField } from '../../../components/Form/InputField';
 import { Button } from '../../../components/UI/Button';
 import { Spinner } from '../../../components/UI/Spinner';
-import { createApiKey } from '../services/apiKeyService';
-import type { CreateApiKeyRequest } from '../types/apiKey.types';
+import { createApiKey } from '../../../services/apiKeyService';
+import type { CreateApiKeyRequest } from '../../../types/apiKey.types';
 import styles from './CreateApiKeyForm.module.css';
 
 interface CreateApiKeyFormProps {
@@ -29,21 +29,17 @@ export function CreateApiKeyForm({ onCreated, onRefreshList }: CreateApiKeyFormP
       expires_at: expiresAt ? new Date(expiresAt).toISOString() : undefined,
     };
 
-    try {
-      const res = await createApiKey(payload);
-      setSuccess(res.message);
-      onCreated(res.api_key);
+    const result = await createApiKey(payload);
+    if (result.ok) {
+      setSuccess(result.response.message);
+      onCreated(result.response.data?.api_key ?? '');
       if (onRefreshList) onRefreshList();
       setLabel('');
       setExpiresAt('');
-    } catch (err: unknown) {
-      let msg = 'Failed to create API key';
-      const maybeErr = err as { response?: { data?: { message?: string } } };
-      msg = maybeErr.response?.data?.message || msg;
-      setError(msg);
-    } finally {
-      setIsLoading(false);
+    } else {
+      setError(result.error.message || 'Failed to create API key');
     }
+    setIsLoading(false);
   };
 
   return (

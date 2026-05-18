@@ -6,26 +6,31 @@ import tenantRoutes from "./modules/tenant/routes";
 import eventTestRoutes from "./Event/testRoute";
 import Arena from "bull-arena";
 import { FlowProducer, Queue } from "bullmq";
+import cookieParser from "cookie-parser";
 
 const app = express();
 app.use(express.json());
 
 //cors
-const allowedOrigins = ["http://localhost:5173"];
+const allowedOrigins = ["http://localhost:4000"];
 app.use(
   cors({
     origin: function (origin, callback) {
+      console.log("CORS Origin:", origin); // Debugging log
       // allow requests with no origin
       if (!origin) return callback(null, true);
-      // if (allowedOrigins.indexOf(origin) === -1) {
-      //     const msg = `The CORS policy for this site does not allow access from the specified Origin.`;
-      //     return callback(new Error(msg), false);
-      // }
+      if (allowedOrigins.indexOf(origin) === -1) {
+          const msg = `The CORS policy for this site does not allow access from the specified Origin.`;
+          return callback(new Error(msg), false);
+      }
       return callback(null, true);
     },
     credentials: true,
   }),
 );
+
+//cookie parser
+app.use(cookieParser());
 
 app.use("/user", userRouter);
 app.use("/tenant", tenantRoutes);

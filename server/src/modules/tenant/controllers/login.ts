@@ -2,11 +2,10 @@ import { Request, Response } from "express";
 import { db } from "../../../db/connection";
 import { AuthService } from "../services/AuthService";
 import { DrizzleUnitOfWork } from "../../../repositories/UnitOfWork";
+import { sendErrorResponse, sendSuccessResponse, ApiError } from "../../../utils/errorHandler";
+import { ErrorCode } from "../../../utils/APIContract";
 
-/**
- * Login tenant controller
- * Authenticates tenant and returns JWT access token
- */
+
 export const loginTenant = async (req: Request, res: Response): Promise<Response> => {
     try {
         const { email, password } = req.body;
@@ -19,41 +18,58 @@ export const loginTenant = async (req: Request, res: Response): Promise<Response
         // Authenticate tenant and generate token
         const { tenant, token } = await authService.loginTenant(uow, { email, password });
 
-        return res.status(200).json({
-            success: true,
-            message: "Login successful",
-            data: {
-                tenant,
-                auth: {
-                    accessToken: token,
-                    tokenType: "Bearer",
-                    expiresIn: "1h",
-                },
+        res.cookie("token", token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "strict",
+            maxAge: 60 * 60 * 1000, // 1 hour
+        });
+        
+        return sendSuccessResponse(res, 200, "Login successful", {
+            tenant,
+            auth: {
+                accessToken: token,
+                tokenType: "Bearer",
+                expiresIn: "1h",
             },
         });
     } catch (error) {
         console.error("Error in loginTenant controller:", error);
 
-        // Handle specific error cases
+        if (error instanceof ApiError) {
+            return sendErrorResponse(res, error);
+        }
+
         if (error instanceof Error) {
             if (error.message.includes("Invalid email or password")) {
-                return res.status(401).json({
-                    success: false,
-                    message: "Invalid email or password",
-                });
+                return sendErrorResponse(
+                    res,
+                    new ApiError(
+                        ErrorCode.INVALID_CREDENTIALS,
+                        "Invalid email or password",
+                        undefined,
+                    ),
+                );
             }
             if (error.message.includes("not active")) {
-                return res.status(403).json({
-                    success: false,
-                    message: "Tenant account is suspended or inactive",
-                });
+                return sendErrorResponse(
+                    res,
+                    new ApiError(
+                        ErrorCode.FORBIDDEN,
+                        "Tenant account is not active",
+                        403
+                    ),
+                );
             }
         }
 
-        return res.status(500).json({
-            success: false,
-            message: "Unable to login",
-            error: error instanceof Error ? error.message : String(error),
-        });
+        return sendErrorResponse(
+            res,
+            new ApiError(
+                ErrorCode.INTERNAL_ERROR,
+                "Error logging in tenant",
+                500
+            ),
+        );
     }
 };

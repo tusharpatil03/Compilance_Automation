@@ -1,9 +1,13 @@
-import { useEffect, useState } from 'react';
-import { listApiKeys, deactivateApiKey, deleteApiKey } from '../services/apiKeyService';
-import type { ApiKeyItem, PaginationMeta } from '../types/apiKey.types';
-import { Button } from '../../../components/UI/Button';
-import { Spinner } from '../../../components/UI/Spinner';
-import styles from './ApiKeysList.module.css';
+import { useEffect, useState } from "react";
+import {
+  listApiKeys,
+  deactivateApiKey,
+  deleteApiKey,
+} from "../../../services/apiKeyService";
+import type { ApiKeyItem, PaginationMeta } from "../../../types/apiKey.types";
+import { Button } from "../../../components/UI/Button";
+import { Spinner } from "../../../components/UI/Spinner";
+import styles from "./ApiKeysList.module.css";
 
 interface ApiKeysListProps {
   refreshSignal?: number; // update this to trigger refresh
@@ -11,23 +15,31 @@ interface ApiKeysListProps {
 
 export function ApiKeysList({ refreshSignal = 0 }: ApiKeysListProps) {
   const [keys, setKeys] = useState<ApiKeyItem[]>([]);
-  const [pagination, setPagination] = useState<PaginationMeta>({ limit: 10, offset: 0, count: 0 });
+  const [pagination, setPagination] = useState<PaginationMeta>({
+    limit: 10,
+    offset: 0,
+    count: 0,
+  });
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string>('');
+  const [error, setError] = useState<string>("");
 
   const fetchKeys = async () => {
     setIsLoading(true);
-    setError('');
-    try {
-      const res = await listApiKeys(pagination.limit, pagination.offset);
-      setKeys(res.data);
-      setPagination(res.pagination);
-    } catch (err: unknown) {
-      const maybeErr = err as { response?: { data?: { message?: string } } };
-      setError(maybeErr.response?.data?.message || 'Failed to fetch API keys');
-    } finally {
-      setIsLoading(false);
+    setError("");
+    const result = await listApiKeys(pagination.limit, pagination.offset);
+    if (result.ok) {
+      setKeys(result.response.data || []);
+      setPagination((p) => {
+        return {
+          ...p,
+          limit: result.response.pagination?.limit ?? 10,
+          offset: result.response.pagination?.offset ?? 0,
+        };
+      });
+    } else {
+      setError(result.error.message || "Failed to fetch API keys");
     }
+    setIsLoading(false);
   };
 
   useEffect(() => {
@@ -36,25 +48,25 @@ export function ApiKeysList({ refreshSignal = 0 }: ApiKeysListProps) {
   }, [refreshSignal, pagination.limit, pagination.offset]);
 
   const handleDeactivate = async (kid: string) => {
-    setError('');
-    try {
-      await deactivateApiKey(kid);
+    setError("");
+    const result = await deactivateApiKey(kid);
+    if (result.ok) {
       await fetchKeys();
-    } catch (err: unknown) {
-      const maybeErr = err as { response?: { data?: { message?: string } } };
-      setError(maybeErr.response?.data?.message || 'Failed to deactivate API key');
+      return;
     }
+
+    setError(result.error.message || "Failed to deactivate API key");
   };
 
   const handleDelete = async (kid: string) => {
-    setError('');
-    try {
-      await deleteApiKey(kid);
+    setError("");
+    const result = await deleteApiKey(kid);
+    if (result.ok) {
       await fetchKeys();
-    } catch (err: unknown) {
-      const maybeErr = err as { response?: { data?: { message?: string } } };
-      setError(maybeErr.response?.data?.message || 'Failed to delete API key');
+      return;
     }
+
+    setError(result.error.message || "Failed to delete API key");
   };
 
   const handlePrev = () => {
@@ -74,8 +86,10 @@ export function ApiKeysList({ refreshSignal = 0 }: ApiKeysListProps) {
       {error && <div className={styles.error}>{error}</div>}
 
       {isLoading ? (
-        <div className={styles.loading}><Spinner /></div>
-      ) : keys.length === 0 ? (
+        <div className={styles.loading}>
+          <Spinner />
+        </div>
+      ) : keys?.length === 0 ? (
         <div className={styles.empty}>No API keys found.</div>
       ) : (
         <div className={styles.tableWrapper}>
@@ -91,28 +105,34 @@ export function ApiKeysList({ refreshSignal = 0 }: ApiKeysListProps) {
               </tr>
             </thead>
             <tbody>
-              {keys.map((k) => (
+              {keys?.map((k) => (
                 <tr key={k.kid}>
-                  <td>{k.label || '-'}</td>
+                  <td>{k.label || "-"}</td>
                   <td className={styles.kid}>{k.kid}</td>
                   <td>
-                    <span className={`${styles.badge} ${k.status === 'active' ? styles.active : styles.inactive}`}>
+                    <span
+                      className={`${styles.badge} ${k.status === "active" ? styles.active : styles.inactive}`}
+                    >
                       {k.status}
                     </span>
                   </td>
-                  <td>{k.expires_at ? new Date(k.expires_at).toLocaleString() : '-'}</td>
+                  <td>
+                    {k.expires_at
+                      ? new Date(k.expires_at).toLocaleString()
+                      : "-"}
+                  </td>
                   <td>{new Date(k.created_at).toLocaleString()}</td>
                   <td className={styles.actions}>
-                    <Button 
-                      variant="outline" 
-                      size="small" 
-                      disabled={k.status === 'inactive'}
+                    <Button
+                      variant="outline"
+                      size="small"
+                      disabled={k.status === "inactive"}
                       onClick={() => handleDeactivate(k.kid)}
                     >
                       Deactivate
                     </Button>
-                    <Button 
-                      variant="secondary" 
+                    <Button
+                      variant="secondary"
                       size="small"
                       onClick={() => handleDelete(k.kid)}
                     >
@@ -127,7 +147,12 @@ export function ApiKeysList({ refreshSignal = 0 }: ApiKeysListProps) {
       )}
 
       <div className={styles.pagination}>
-        <Button variant="outline" size="small" onClick={handlePrev} disabled={pagination.offset === 0}>
+        <Button
+          variant="outline"
+          size="small"
+          onClick={handlePrev}
+          disabled={pagination.offset === 0}
+        >
           Previous
         </Button>
         <span className={styles.pageInfo}>
