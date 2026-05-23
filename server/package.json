@@ -14,7 +14,8 @@
     "db:migrate": "pnpm exec drizzle-kit migrate --config ./drizzle.config.ts",
     "db:status": "pnpm exec drizzle-kit status --config ./drizzle.config.ts",
     "test": "jest",
-    "test:watch": "jest --watch"
+    "test:watch": "jest --watch",
+    "init": "tsx scripts/init.ts"
   },
   "keywords": [],
   "author": "",

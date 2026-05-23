@@ -2,7 +2,8 @@ import type { APIResponse } from "../types/APIResponse";
 
 export interface IConfig {
     endpoint: string;
-    params?: Record<string, unknown>;
+    param?: string;
+    query?: Record<string, string | number>;
     headers?: Record<string, unknown>;
     body?: unknown;
 }
@@ -24,10 +25,12 @@ export class APILayer {
         resInterceptor?: ResInterceptor[]
     ): Promise<APIResponse<T>> {
 
-        // config.headers = {
-        //     ...config.headers,
-        //     "Access-Control-Allow-Origin": "localhost:4000",
-        // };
+        config.headers = {
+            ...config.headers,
+            "Access-Control-Allow-Credentials": true,
+            "Access-Control-Allow-Origin": "localhost:4000",
+            authorization: "Bearer ",
+        };
 
         // Run interceptor first (before any request building)
         if (reqInterceptor && reqInterceptor?.length > 0) {
@@ -38,11 +41,18 @@ export class APILayer {
 
         // Build URL
         const url = new URL(config.endpoint, this.baseURL);
-        if (config.params) {
-            Object.keys(config.params).forEach(key => {
-                url.searchParams.append(key, String(config.params![key]));
-            });
+        if(config.param){
+            console.log(url.pathname);
         }
+
+        if (config.query) {
+            Object.keys(config.query).forEach(key => {
+                url.searchParams.append(key, String(config.query![key]));
+            });
+
+            console.log(url.toString());
+        }
+
 
         // Build fetch options
         const fetchOptions: RequestInit = {
@@ -60,9 +70,13 @@ export class APILayer {
         }
 
         // Execute request
-        const response = await fetch(url.toString(), fetchOptions);
-        const responseData = await response.json();
+        const response = await fetch(url.toString(), {
+            ...fetchOptions,
+            credentials: 'include', // Ensure cookies are sent with the request
+        });
         
+        const responseData = await response.json();
+
         console.log(`[API] ${method} ${url.toString()}`, { request: config, response: responseData });
 
         // Run response interceptor before returning data

@@ -31,7 +31,7 @@ export const authenticateTenant = async (
 
         // Get JWT secret from environment
         const secretKey = process.env.ACCESS_TOKEN_SECRET;
-        
+
         if (!secretKey) {
             console.error("JWT secret key is not defined in environment variables");
             sendErrorResponse(res, new ApiError(ErrorCode.INTERNAL_ERROR, "Server configuration error", 500));
@@ -52,6 +52,8 @@ export const authenticateTenant = async (
             sendErrorResponse(res, new ApiError(ErrorCode.TOKEN_EXPIRED, "Token has expired. Please login again", 401));
             return;
         }
+
+        console.error("JWT verification error:", error);
 
         if (error instanceof jwt.JsonWebTokenError) {
             sendErrorResponse(res, new ApiError(ErrorCode.INVALID_TOKEN, "Invalid or malformed token", 401));

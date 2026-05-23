@@ -16,8 +16,8 @@ export const comparePassword = (password: string, hashedPassword: string, salt: 
 }
 
 export const generateApiKey = (): string => {
-    const apiKey = bcrypt.genSaltSync(20);
-    return apiKey.replace(/\//g, ''); // remove / to make it URL safe
+    const apiKey = crypto.randomBytes(32).toString('hex'); // 64 char hex string
+    return apiKey;
 }
 
 export const hashApiKey = (apiKey: string): string => {
@@ -49,11 +49,14 @@ export const generateJWTToken = (JWTPayload: JWTPayload): string => {
 }
 
 // function to encrypt data using AES-256-CBC
-export const encryptData = (data: string, secret: string): string => {
+export const encryptData = (data: string): string => {
+    const secret = process.env.API_KEY_ENCRYPTION_SECRET ?? "default_encryption_secret";
+    // Derive a 32-byte key for AES-256-CBC regardless of secret length
+    const key = crypto.createHash("sha256").update(secret, "utf-8").digest();
     const iv = crypto.randomBytes(16); // generate random initialization vector
 
-    const cipher = crypto.createCipheriv('aes-256-cbc', Buffer.from(secret, 'hex'), iv);
-    let encrypted = cipher.update(data, 'utf8', 'hex');
+    const cipher = crypto.createCipheriv('aes-256-cbc', key, iv);
+    let encrypted = cipher.update(data, 'utf-8', 'hex');
     encrypted += cipher.final('hex');
 
     return iv.toString('hex') + ':' + encrypted; // prepend IV for later use in decryption

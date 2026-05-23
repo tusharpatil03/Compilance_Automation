@@ -8,17 +8,15 @@ import { ErrorCode } from "../../../utils/APIContract";
 
 export async function createApiKey(req: Request, res: Response) {
     try {
-        const { kid, expires_at } = req.body as {
-            kid: string;
+        const { lable = "my key", expires_at } = req.body as {
+            lable: string;
             expires_at?: string;
         };
 
-        if (!kid) {
-            return sendErrorResponse(
-                res,
-                new ApiError(ErrorCode.MISSING_REQUIRED_FIELD, "Missing required field: kid", 400, "kid")
-            );
-        }
+        // Generate a unique key identifier (kid) for tenant
+        // kid = lable + random suffix to ensure uniqueness
+        const randomSuffix = Math.random().toString(36).substring(2, 8); // 6 char random string
+        const kid = `${lable}-${randomSuffix}`;
 
         const authReq = req as AuthenticatedRequest;
         const tenantId = authReq.tenant?.id;
@@ -32,10 +30,16 @@ export async function createApiKey(req: Request, res: Response) {
         const api_key_hash = hashApiKey(api_key);
 
         // Encrypt api key before storing
-        const encryptedApiKey = encryptData(
-            api_key,
-            process.env.API_KEY_ENCRYPTION_SECRET || "default_encryption_secret"
-        );
+        let encryptedApiKey;
+        try{
+            encryptedApiKey = encryptData(
+                api_key,
+            );
+        }catch(error){
+            console.error("Encryption error details:", error);
+            console.error("Error encrypting API key:", api_key.length);
+            return sendErrorResponse(res, new ApiError(ErrorCode.INTERNAL_ERROR, "Failed to encrypt API key", 500));
+        }
 
         const payload: NewTenantApiKey = {
             tenant_id: tenantId,
@@ -56,6 +60,7 @@ export async function createApiKey(req: Request, res: Response) {
             key: sanitized,
         });
     } catch (error: any) {
+        console.error("Error creating API key:", error);
         if (error instanceof ApiError) {
             return sendErrorResponse(res, error);
         }

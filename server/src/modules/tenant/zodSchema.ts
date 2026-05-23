@@ -72,11 +72,10 @@ export type TenantResponse = z.infer<typeof tenantResponseSchema>;
 
 // API Key schemas
 export const tenantApiKeyCreateSchema = z.object({
-    kid: z
+    label: z
         .string()
         .min(1, "Key ID (kid) is required")
-        .max(128, "Key ID must be at most 128 characters")
-        .regex(/^[a-zA-Z0-9_-]+$/, "Key ID can only contain alphanumeric characters, hyphens, and underscores"),
+        .max(128, "Key ID must be at most 128 characters"),
     expires_at: z
         .string()
         .datetime()

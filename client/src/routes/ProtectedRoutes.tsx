@@ -6,10 +6,10 @@ import ApiManagementPage from "../pages/protected/ApiManagementPage";
 export function ProtectedRoutes() {
   const { isAuthenticated } = useAuth();
 
-  if (!isAuthenticated) {
-    console.log(isAuthenticated);
-    return null;
-  }
+  // if (!isAuthenticated) {
+  //   console.log(isAuthenticated);
+  //   return null;
+  // }
 
   return (
     <Routes>

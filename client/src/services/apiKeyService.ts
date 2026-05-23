@@ -17,7 +17,7 @@ export const listApiKeys = async (
   try {
     const response = await apiClient.get<ApiKeyItem[]>({
       endpoint: ENDPOINTS.API_KEYS.LIST,
-      params: { limit, offset }
+      query: { limit, offset }
     });
 
     if (!response.success) {

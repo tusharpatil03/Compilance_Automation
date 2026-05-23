@@ -32,6 +32,13 @@ app.use(
 //cookie parser
 app.use(cookieParser());
 
+app.use("/", (req, res, next) => {
+  if(req?.cookies?.token){
+    req.headers.authorization = `Bearer ${req.cookies.token}`;
+  }
+  next();
+});
+
 app.use("/user", userRouter);
 app.use("/tenant", tenantRoutes);
 app.use("/event", eventTestRoutes);
