@@ -11,7 +11,7 @@ export const authInterceptor = (token?: string) => (config: IConfig) => {
 };
 
 export const authWithLoggingInterceptor = (token?: string) => (config: IConfig) => {
-    console.log(`[API] ${config.endpoint}`, { params: config.params });
+    console.log(`[API] ${config.endpoint}`, { param: config.param, query: config.query });
 
     if (token) {
         config.headers = {

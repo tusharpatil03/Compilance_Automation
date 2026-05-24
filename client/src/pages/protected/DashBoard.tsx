@@ -15,8 +15,19 @@ function DashBoard() {
     <div className={styles.container}>
       <div className={styles.header}>
         <h1 className={styles.title}>Dashboard</h1>
-        <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-          <Link to="/api-keys" style={{ color: '#3b82f6', textDecoration: 'none', fontWeight: 500 }}>API Management</Link>
+        <div style={{ display: "flex", gap: "0.75rem", alignItems: "center" }}>
+          <Link
+            to="/api-keys"
+            style={{ color: "#3b82f6", textDecoration: "none", fontWeight: 500 }}
+          >
+            API Management
+          </Link>
+          <Link
+            to="/webhooks"
+            style={{ color: "#3b82f6", textDecoration: "none", fontWeight: 500 }}
+          >
+            Webhooks
+          </Link>
           <Button onClick={handleLogout} variant="outline">
             Logout
           </Button>

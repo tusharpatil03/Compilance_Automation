@@ -319,6 +319,33 @@ export const validateURL = (
   }
 };
 
+export const validateHttpsUrl = (
+  url: string,
+  onError?: ErrorCallback
+): ValidationResult => {
+  const trimmedUrl = url.trim();
+
+  if (!trimmedUrl) {
+    const error = "URL is required";
+    onError?.(error);
+    return { isValid: false, error };
+  }
+
+  try {
+    const parsed = new URL(trimmedUrl);
+    if (parsed.protocol !== "https:") {
+      const error = "URL must start with https://";
+      onError?.(error);
+      return { isValid: false, error };
+    }
+    return { isValid: true };
+  } catch {
+    const error = "Please enter a valid HTTPS URL";
+    onError?.(error);
+    return { isValid: false, error };
+  }
+};
+
 // ============ PHONE VALIDATION ============
 
 

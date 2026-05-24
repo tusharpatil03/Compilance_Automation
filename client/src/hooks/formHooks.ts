@@ -1,28 +1,35 @@
-// import { useState } from "react";
+import { useCallback, useState } from "react";
 
-// const createStateFromArray = <T extends readonly string[]>(
-//     arr: T
-// ): Record<T[number], string> => {
-//     return Object.fromEntries(arr.map((key) => [key, ""])) as Record<
-//         T[number],
-//         string
-//     >;
-// };
+export function useForm<T>(initialValues: T) {
+    const [values, setValues] = useState<T>(initialValues);
+    const [errors, setErrors] = useState<Partial<Record<keyof T, string>>>({});
+    const [formErrors, setFormErrors] = useState<string[]>([]);
 
+    const handleChange = useCallback(
+        (e: React.ChangeEvent<HTMLInputElement>) => {
+            const { name, value } = e.target;
+            setValues((prev) => ({ ...prev, [name]: value }));
+        },
+        [setValues],
+    );
 
-// type FormState<T extends readonly string[]> = Record<T[number], string>;
+    const resetForm = () => {
+        setValues(initialValues);
+        setErrors({});
+    };
 
-// export function useForm(...args: string[]) {
-//     const [formInput, setFormInput] = useState<FormState<typeof args>>(createStateFromArray(args));
+    const clearErrors = () => {
+        setErrors({});
+    }
 
-//     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-//         const { name, value } = e.target;
-//         setFormInput((prev) => ({ ...prev, [name]: value }));
-//     };
-
-//     return {
-//         formInput,
-//         handleChange,
-//         setFormInput
-//     }
-// }
+    return {
+        values,
+        errors,
+        handleChange,
+        setErrors,
+        formErrors,
+        setFormErrors,
+        resetForm,
+        clearErrors
+    }
+}

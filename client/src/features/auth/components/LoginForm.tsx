@@ -6,9 +6,9 @@ import { useFormValidation } from "../../../hooks/useValidation";
 import { validateEmail, validateRequired } from "../../../utils/validation";
 import styles from "./LoginForm.module.css";
 import { useLogin } from "../hooks/useLogin";
-import { useForm } from "../hooks/useForm";
 import type { LoginRequest } from "../../../types/auth.types";
 import { useAuth } from "../../../hooks/useAuth";
+import { useForm } from "../../../hooks/formHooks";
 
 export function LoginForm() {
   const { loading, handleLogin } = useLogin();

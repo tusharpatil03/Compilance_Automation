@@ -1,7 +1,7 @@
 // Type definitions based on Tenants API documentation
 
 export interface Tenant {
-  id: number;
+  id: string;
   name: string;
   email: string;
   status: 'active' | 'inactive' | 'suspended';
