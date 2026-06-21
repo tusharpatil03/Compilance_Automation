@@ -30,7 +30,6 @@ export const loginService = async (
   }
   catch(error) {
     const message = getErrorMessage(error, "Failed to log in. Please check your network connection");
-    console.log("Login service error:", error);
     return { ok: false, error: new NetworkError(message) }
   }
 };

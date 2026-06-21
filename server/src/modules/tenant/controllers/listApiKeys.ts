@@ -34,7 +34,9 @@ export async function listApiKeys(req: Request, res: Response) {
         const keys = await service.listApiKeys(tenantId, { limit: cappedLimit, offset });
 
         // Never send api_key_hash
-        const sanitized = keys.map(({ api_key_hash, ...rest }) => rest);
+        const sanitized = keys.map(({ api_key_hash, key_prefix, ...rest }) => (
+            { ...rest, kid: key_prefix } // expose key_prefix as kid for client reference
+        ));
 
         return sendSuccessResponse(
             res,

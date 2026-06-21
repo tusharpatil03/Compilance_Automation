@@ -20,14 +20,8 @@ export const authenticateTenant = async (
 ): Promise<void> => {
     try {
         // Extract token from Authorization header
-        const authHeader = req.headers.authorization;
         
-        if (!authHeader || !authHeader.startsWith("Bearer ")) {
-            sendErrorResponse(res, new ApiError(ErrorCode.AUTH_REQUIRED, "Authentication required", 401));
-            return;
-        }
-
-        const token = authHeader.substring(7); // Remove "Bearer " prefix
+        const token = req.headers.authorization?.split(" ")[1] || req.cookies?.token;
 
         // Get JWT secret from environment
         const secretKey = process.env.ACCESS_TOKEN_SECRET;

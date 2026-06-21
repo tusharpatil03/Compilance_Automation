@@ -6,7 +6,7 @@ import type { AuthenticatedRequest } from "../middlewares/auth";
 
 export async function removeApiKey(req: Request, res: Response) {
     try {
-        const { kid } = req.body as { kid?: string };
+        const { kid } = req.params as { kid?: string };
 
         if (!kid) {
             return sendErrorResponse(res, new ApiError(ErrorCode.MISSING_REQUIRED_FIELD, "Missing required field: kid", 400, "kid"));

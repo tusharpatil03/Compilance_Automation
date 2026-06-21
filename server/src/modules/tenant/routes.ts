@@ -21,6 +21,7 @@ import { createWebhook } from "./controllers/createWebhook";
 import { listWebhooks } from "./controllers/listWebhooks";
 import { deleteWebhook } from "./controllers/deleteWebhook";
 import { authenticateTenant } from "./middlewares/auth";
+import { injectParamsIntoBody } from "../../utils/InjectParamsIntoBody";
 
 const router = Router();
 
@@ -31,8 +32,8 @@ router.post("/login", validagteBody(tenantLoginSchema), loginTenant);
 // API Key endpoints
 router.post("/api-keys", authenticateTenant, validagteBody(tenantApiKeyCreateSchema), createApiKey);
 router.get("/api-keys", authenticateTenant, validagteBody(tenantApiKeyListSchema, "query"), listApiKeys);
-router.delete("/api-keys", authenticateTenant, validagteBody(tenantApiKeyRemoveSchema), removeApiKey);
-router.patch("/api-keys", authenticateTenant, validagteBody(tenantApiKeyChangeStatusSchema), changeApiKeyStatus);
+router.delete("/api-keys/:kid", authenticateTenant, validagteBody(tenantApiKeyRemoveSchema, "params"), removeApiKey);
+router.patch("/api-keys/:kid", authenticateTenant, injectParamsIntoBody, validagteBody(tenantApiKeyChangeStatusSchema,), changeApiKeyStatus);
 
 // Webhook endpoints
 router.post("/webhooks", authenticateTenant, validagteBody(tenantWebhookCreateSchema), createWebhook);

@@ -1,7 +1,3 @@
-/**
- * Centralized API endpoint constants
- * This ensures single source of truth for all API routes
- */
 
 export const ENDPOINTS = {
     AUTH: {

@@ -7,6 +7,8 @@ import eventTestRoutes from "./Event/testRoute";
 import Arena from "bull-arena";
 import { FlowProducer, Queue } from "bullmq";
 import cookieParser from "cookie-parser";
+import { ApiError, sendErrorResponse } from "./utils/errorHandler";
+import { ErrorCode } from "./utils/APIContract";
 
 const app = express();
 app.use(express.json());
@@ -32,16 +34,14 @@ app.use(
 //cookie parser
 app.use(cookieParser());
 
-app.use("/", (req, res, next) => {
-  if(req?.cookies?.token){
-    req.headers.authorization = `Bearer ${req.cookies.token}`;
-  }
-  next();
-});
-
 app.use("/user", userRouter);
 app.use("/tenant", tenantRoutes);
 app.use("/event", eventTestRoutes);
+
+// handle 404 for undefined routes
+app.use((req, res) => {
+    sendErrorResponse(res, new ApiError(ErrorCode.NOT_FOUND, "Endpoint not found", 404));
+});
 
 //bullmq arena
 

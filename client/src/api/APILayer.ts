@@ -41,16 +41,11 @@ export class APILayer {
 
         // Build URL
         const url = new URL(config.endpoint, this.baseURL);
-        if(config.param){
-            console.log(url.pathname);
-        }
 
         if (config.query) {
             Object.keys(config.query).forEach(key => {
                 url.searchParams.append(key, String(config.query![key]));
             });
-
-            console.log(url.toString());
         }
 
 
@@ -99,6 +94,10 @@ export class APILayer {
 
     async put<T>(config: IConfig, reqInterceptor?: ReqInterceptor[], resInterceptor?: ResInterceptor[]): Promise<APIResponse<T>> {
         return this.executeRequest<T>('PUT', config, reqInterceptor, resInterceptor);
+    }
+
+    async patch<T>(config: IConfig, reqInterceptor?: ReqInterceptor[], resInterceptor?: ResInterceptor[]): Promise<APIResponse<T>> {
+        return this.executeRequest<T>('PATCH', config, reqInterceptor, resInterceptor);
     }
 
     async delete<T>(config: IConfig, reqInterceptor?: ReqInterceptor[], resInterceptor?: ResInterceptor[]): Promise<APIResponse<T>> {

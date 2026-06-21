@@ -67,7 +67,7 @@ export const deactivateApiKey = async (
   kid: string
 ): Promise<Result<APIResponse<never>, AppError>> => {
   try {
-    const response = await apiClient.post<never>({
+    const response = await apiClient.patch<never>({
       endpoint: ENDPOINTS.API_KEYS.DEACTIVATE(kid),
       body: { status: 'inactive' }
     });

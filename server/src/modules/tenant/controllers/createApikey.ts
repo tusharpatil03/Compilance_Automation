@@ -16,7 +16,7 @@ export async function createApiKey(req: Request, res: Response) {
         // Generate a unique key identifier (kid) for tenant
         // kid = lable + random suffix to ensure uniqueness
         const randomSuffix = Math.random().toString(36).substring(2, 8); // 6 char random string
-        const kid = `${lable}-${randomSuffix}`;
+        const kid = `${lable.trim()}-${randomSuffix}`;
 
         const authReq = req as AuthenticatedRequest;
         const tenantId = authReq.tenant?.id;
