@@ -1,5 +1,5 @@
-import React from 'react';
-import styles from './InputField.module.css';
+import React from "react";
+import styles from "./InputField.module.css";
 
 interface InputFieldProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: string;
@@ -7,15 +7,8 @@ interface InputFieldProps extends React.InputHTMLAttributes<HTMLInputElement> {
   helperText?: string;
 }
 
-export function InputField({ 
-  label, 
-  error, 
-  helperText, 
-  id,
-  className,
-  ...props 
-}: InputFieldProps) {
-  const inputId = id || label?.toLowerCase().replace(/\s+/g, '-');
+export function InputField({ label, error, helperText, id, className, ...props }: InputFieldProps) {
+  const inputId = id || label?.toLowerCase().replace(/\s+/g, "-");
 
   return (
     <div className={styles.fieldWrapper}>
@@ -26,7 +19,7 @@ export function InputField({
       )}
       <input
         id={inputId}
-        className={`${styles.input} ${error ? styles.inputError : ''} ${className || ''}`}
+        className={`${styles.input} ${error ? styles.inputError : ""} ${className || ""}`}
         {...props}
       />
       {error && <span className={styles.error}>{error}</span>}

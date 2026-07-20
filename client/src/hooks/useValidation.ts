@@ -1,10 +1,7 @@
 import { useState, useCallback } from "react";
 import type { ValidationResult } from "../utils/validation";
 
-
-export const useFormValidation = (
-  initialErrors: Record<string, string> = {}
-) => {
+export const useFormValidation = (initialErrors: Record<string, string> = {}) => {
   const [errors, setErrors] = useState<Record<string, string>>(initialErrors);
 
   const clearError = useCallback((field: string) => {
@@ -26,7 +23,6 @@ export const useFormValidation = (
     setErrors({});
   }, []);
 
-
   const handleValidationResult = useCallback(
     (field: string, validationResult: ValidationResult) => {
       if (validationResult.isValid) {
@@ -36,25 +32,21 @@ export const useFormValidation = (
       }
       return validationResult.isValid;
     },
-    [clearError, setError]
+    [clearError, setError],
   );
 
+  const validateFields = useCallback((validations: Record<string, ValidationResult>): boolean => {
+    const newErrors: Record<string, string> = {};
 
-  const validateFields = useCallback(
-    (validations: Record<string, ValidationResult>): boolean => {
-      const newErrors: Record<string, string> = {};
+    Object.entries(validations).forEach(([field, result]) => {
+      if (!result.isValid && result.error) {
+        newErrors[field] = result.error;
+      }
+    });
 
-      Object.entries(validations).forEach(([field, result]) => {
-        if (!result.isValid && result.error) {
-          newErrors[field] = result.error;
-        }
-      });
-
-      setErrors(newErrors);
-      return Object.keys(newErrors).length === 0;
-    },
-    []
-  );
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  }, []);
 
   return {
     errors,
@@ -73,12 +65,8 @@ export const useFormValidation = (
  * @param onValidationChange - Callback when validation state changes
  * @returns Validation helpers
  */
-export const useValidationFeedback = (
-  onValidationChange?: (isValid: boolean) => void
-) => {
-  const [validationState, setValidationState] = useState<
-    Record<string, boolean>
-  >({});
+export const useValidationFeedback = (onValidationChange?: (isValid: boolean) => void) => {
+  const [validationState, setValidationState] = useState<Record<string, boolean>>({});
 
   const updateValidation = useCallback(
     (field: string, isValid: boolean) => {
@@ -89,14 +77,14 @@ export const useValidationFeedback = (
         return updated;
       });
     },
-    [onValidationChange]
+    [onValidationChange],
   );
 
   const isFieldValid = useCallback(
     (field: string): boolean => {
       return validationState[field] ?? true;
     },
-    [validationState]
+    [validationState],
   );
 
   const allFieldsValid = useCallback((): boolean => {

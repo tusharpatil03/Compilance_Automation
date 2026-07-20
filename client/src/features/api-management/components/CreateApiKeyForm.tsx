@@ -1,10 +1,10 @@
-import { useState } from 'react';
-import { InputField } from '../../../components/Form/InputField';
-import { Button } from '../../../components/UI/Button';
-import { Spinner } from '../../../components/UI/Spinner';
-import { createApiKey } from '../../../services/apiKeyService';
-import type { CreateApiKeyRequest } from '../../../types/apiKey.types';
-import styles from './CreateApiKeyForm.module.css';
+import { useState } from "react";
+import { InputField } from "../../../components/Form/InputField";
+import { Button } from "../../../components/UI/Button";
+import { Spinner } from "../../../components/UI/Spinner";
+import { createApiKey } from "../../../services/apiKeyService";
+import type { CreateApiKeyRequest } from "../../../types/apiKey.types";
+import styles from "./CreateApiKeyForm.module.css";
 
 interface CreateApiKeyFormProps {
   onCreated: (rawKey: string) => void;
@@ -12,16 +12,16 @@ interface CreateApiKeyFormProps {
 }
 
 export function CreateApiKeyForm({ onCreated, onRefreshList }: CreateApiKeyFormProps) {
-  const [label, setLabel] = useState('');
-  const [expiresAt, setExpiresAt] = useState('');
+  const [label, setLabel] = useState("");
+  const [expiresAt, setExpiresAt] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string>('');
-  const [success, setSuccess] = useState<string>('');
+  const [error, setError] = useState<string>("");
+  const [success, setSuccess] = useState<string>("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
-    setSuccess('');
+    setError("");
+    setSuccess("");
     setIsLoading(true);
 
     const payload: CreateApiKeyRequest = {
@@ -32,12 +32,12 @@ export function CreateApiKeyForm({ onCreated, onRefreshList }: CreateApiKeyFormP
     const result = await createApiKey(payload);
     if (result.ok) {
       setSuccess(result.response.message);
-      onCreated(result.response.data?.api_key ?? '');
+      onCreated(result.response.data?.api_key ?? "");
       if (onRefreshList) onRefreshList();
-      setLabel('');
-      setExpiresAt('');
+      setLabel("");
+      setExpiresAt("");
     } else {
-      setError(result.error.message || 'Failed to create API key');
+      setError(result.error.message || "Failed to create API key");
     }
     setIsLoading(false);
   };

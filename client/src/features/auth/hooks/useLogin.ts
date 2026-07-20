@@ -6,33 +6,35 @@ import type { Result, SuccessResponse } from "../../../types/APIResponse";
 import type { AuthResponse } from "../../../types/auth.types";
 
 export function useLogin() {
-    const [loading, setLoading] = useState<boolean>(false);
-    const [error, setError] = useState<AppError | null>(null);
-    const [success, setSuccess] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<AppError | null>(null);
+  const [success, setSuccess] = useState<boolean>(false);
 
-    const handleLogin = async (data: LoginRequest): Promise<Result<SuccessResponse<AuthResponse>, AppError>> => {
-        setLoading(true);
-        setError(null);
+  const handleLogin = async (
+    data: LoginRequest,
+  ): Promise<Result<SuccessResponse<AuthResponse>, AppError>> => {
+    setLoading(true);
+    setError(null);
 
-        try {
-            const result = await loginService(data);
-            if(result.ok){
-            setSuccess(true);
-            } else {
-            setError(result.error);
-            setSuccess(false);
-            }
+    try {
+      const result = await loginService(data);
+      if (result.ok) {
+        setSuccess(true);
+      } else {
+        setError(result.error);
+        setSuccess(false);
+      }
 
-            return result;
-        } finally {
-            setLoading(false);
-        }
-    };
+      return result;
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    return {
-        loading,
-        error,
-        handleLogin,
-        success
-    };
+  return {
+    loading,
+    error,
+    handleLogin,
+    success,
+  };
 }

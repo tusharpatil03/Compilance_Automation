@@ -46,7 +46,8 @@
   padding: 1rem;
 }
 
-.left, .right {
+.left,
+.right {
   min-width: 0;
 }
 

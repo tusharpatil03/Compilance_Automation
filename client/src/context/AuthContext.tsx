@@ -19,7 +19,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const [tenant, setTenant] = useState<Tenant | undefined>(() => {
     const storedTenant = localStorage.getItem("tenant");
-    return storedTenant ? JSON.parse(storedTenant) as Tenant : undefined;
+    return storedTenant ? (JSON.parse(storedTenant) as Tenant) : undefined;
   });
 
   const navigate = useNavigate();

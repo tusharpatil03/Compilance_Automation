@@ -30,10 +30,7 @@ export const isValidEmail = (email: string): boolean => {
  * @param onError - Optional callback to handle error message
  * @returns ValidationResult object
  */
-export const validateEmail = (
-  email: string,
-  onError?: ErrorCallback
-): ValidationResult => {
+export const validateEmail = (email: string, onError?: ErrorCallback): ValidationResult => {
   const trimmedEmail = email.trim();
 
   if (!trimmedEmail) {
@@ -58,10 +55,7 @@ export const isValidPassword = (password: string): boolean => {
   return passwordRegex.test(password);
 };
 
-export const validatePassword = (
-  password: string,
-  onError?: ErrorCallback
-): ValidationResult => {
+export const validatePassword = (password: string, onError?: ErrorCallback): ValidationResult => {
   if (!password) {
     const error = "Password is required";
     onError?.(error);
@@ -84,11 +78,10 @@ export const validatePassword = (
   return { isValid: true };
 };
 
-
 export const validatePasswordMatch = (
   password: string,
   confirmPassword: string,
-  onError?: ErrorCallback
+  onError?: ErrorCallback,
 ): ValidationResult => {
   if (!confirmPassword) {
     const error = "Please confirm your password";
@@ -107,7 +100,6 @@ export const validatePasswordMatch = (
 
 // ============ DATE VALIDATION ============
 
-
 export const isValidDateFormat = (dateString: string): boolean => {
   const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
   if (!dateRegex.test(dateString)) return false;
@@ -116,11 +108,7 @@ export const isValidDateFormat = (dateString: string): boolean => {
   return date instanceof Date && !isNaN(date.getTime());
 };
 
-
-export const validateDate = (
-  dateString: string,
-  onError?: ErrorCallback
-): ValidationResult => {
+export const validateDate = (dateString: string, onError?: ErrorCallback): ValidationResult => {
   if (!dateString) {
     const error = "Date is required";
     onError?.(error);
@@ -138,7 +126,7 @@ export const validateDate = (
 
 export const validateFutureDate = (
   dateString: string,
-  onError?: ErrorCallback
+  onError?: ErrorCallback,
 ): ValidationResult => {
   const dateValidation = validateDate(dateString, onError);
   if (!dateValidation.isValid) return dateValidation;
@@ -156,10 +144,7 @@ export const validateFutureDate = (
   return { isValid: true };
 };
 
-export const validatePastDate = (
-  dateString: string,
-  onError?: ErrorCallback
-): ValidationResult => {
+export const validatePastDate = (dateString: string, onError?: ErrorCallback): ValidationResult => {
   const dateValidation = validateDate(dateString, onError);
   if (!dateValidation.isValid) return dateValidation;
 
@@ -178,12 +163,11 @@ export const validatePastDate = (
 
 // ============ TEXT/STRING VALIDATION ============
 
-
 export const validateTextLength = (
   text: string,
   minLength: number = 1,
   maxLength: number = Infinity,
-  onError?: ErrorCallback
+  onError?: ErrorCallback,
 ): ValidationResult => {
   const trimmedText = text.trim();
 
@@ -208,11 +192,10 @@ export const validateTextLength = (
   return { isValid: true };
 };
 
-
 export const validateRequired = (
   text: string,
   fieldName: string = "This field",
-  onError?: ErrorCallback
+  onError?: ErrorCallback,
 ): ValidationResult => {
   if (!text || !text.trim()) {
     const error = `${fieldName} is required`;
@@ -229,7 +212,7 @@ export const validateName = (
   name: string,
   minLength: number = 3,
   maxLength: number = 255,
-  onError?: ErrorCallback
+  onError?: ErrorCallback,
 ): ValidationResult => {
   const trimmedName = name.trim();
 
@@ -256,12 +239,11 @@ export const validateName = (
 
 // ============ NUMBER VALIDATION ============
 
-
 export const validateNumberRange = (
   value: string | number,
   min: number = 0,
   max: number = Infinity,
-  onError?: ErrorCallback
+  onError?: ErrorCallback,
 ): ValidationResult => {
   const num = typeof value === "string" ? parseFloat(value) : value;
 
@@ -286,21 +268,16 @@ export const validateNumberRange = (
   return { isValid: true };
 };
 
-
 export const validatePositiveNumber = (
   value: string | number,
-  onError?: ErrorCallback
+  onError?: ErrorCallback,
 ): ValidationResult => {
   return validateNumberRange(value, 0, Infinity, onError);
 };
 
 // ============ URL VALIDATION ============
 
-
-export const validateURL = (
-  url: string,
-  onError?: ErrorCallback
-): ValidationResult => {
+export const validateURL = (url: string, onError?: ErrorCallback): ValidationResult => {
   const trimmedUrl = url.trim();
 
   if (!trimmedUrl) {
@@ -319,10 +296,7 @@ export const validateURL = (
   }
 };
 
-export const validateHttpsUrl = (
-  url: string,
-  onError?: ErrorCallback
-): ValidationResult => {
+export const validateHttpsUrl = (url: string, onError?: ErrorCallback): ValidationResult => {
   const trimmedUrl = url.trim();
 
   if (!trimmedUrl) {
@@ -348,11 +322,7 @@ export const validateHttpsUrl = (
 
 // ============ PHONE VALIDATION ============
 
-
-export const validatePhoneNumber = (
-  phone: string,
-  onError?: ErrorCallback
-): ValidationResult => {
+export const validatePhoneNumber = (phone: string, onError?: ErrorCallback): ValidationResult => {
   const trimmedPhone = phone.trim();
 
   if (!trimmedPhone) {
@@ -384,12 +354,11 @@ export const validatePhoneNumber = (
 
 // ============ CUSTOM VALIDATION ============
 
-
 export const validatePattern = (
   value: string,
   pattern: RegExp,
   errorMessage: string = "Invalid format",
-  onError?: ErrorCallback
+  onError?: ErrorCallback,
 ): ValidationResult => {
   if (!pattern.test(value)) {
     onError?.(errorMessage);
@@ -401,10 +370,7 @@ export const validatePattern = (
 
 // ============ BATCH VALIDATION ============
 
-
-export const validateAll = (
-  ...validations: ValidationResult[]
-): boolean => {
+export const validateAll = (...validations: ValidationResult[]): boolean => {
   return validations.every((result) => result.isValid);
 };
 
@@ -413,9 +379,7 @@ export const validateAll = (
  * @param validations - Array of validation functions that return ValidationResult
  * @returns Array of error messages
  */
-export const collectErrors = (
-  ...validations: ValidationResult[]
-): string[] => {
+export const collectErrors = (...validations: ValidationResult[]): string[] => {
   return validations
     .filter((result) => !result.isValid && result.error)
     .map((result) => result.error as string);
@@ -433,7 +397,7 @@ export const collectErrors = (
 export const createValidationHandler = <T extends string | number>(
   validator: (value: T) => ValidationResult,
   onValidError: ErrorCallback,
-  onValidSuccess?: () => void
+  onValidSuccess?: () => void,
 ) => {
   return (value: T) => {
     const result = validator(value);
@@ -457,7 +421,7 @@ export const validateFields = <T extends Record<string, unknown>>(
   validators: {
     [K in keyof T]?: (value: T[K]) => ValidationResult;
   },
-  onErrorsUpdate: (errors: Record<string, string>) => void
+  onErrorsUpdate: (errors: Record<string, string>) => void,
 ): boolean => {
   const errors: Record<string, string> = {};
 

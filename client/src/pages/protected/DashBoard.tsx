@@ -1,14 +1,14 @@
 import { useAuth } from "../../hooks/useAuth";
 import { Button } from "../../components/UI/Button";
-import styles from './DashBoard.module.css';
-import { Link } from 'react-router-dom';
+import styles from "./DashBoard.module.css";
+import { Link } from "react-router-dom";
 
 function DashBoard() {
   const { tenant, logout } = useAuth();
 
   const handleLogout = () => {
     logout();
-    window.location.href = '/login';
+    window.location.href = "/login";
   };
 
   return (
@@ -44,7 +44,9 @@ function DashBoard() {
             </div>
             <div className={styles.infoRow}>
               <span className={styles.label}>Status:</span>
-              <span className={`${styles.value} ${styles.statusBadge} ${styles[tenant?.status || 'active']}`}>
+              <span
+                className={`${styles.value} ${styles.statusBadge} ${styles[tenant?.status || "active"]}`}
+              >
                 {tenant?.status}
               </span>
             </div>

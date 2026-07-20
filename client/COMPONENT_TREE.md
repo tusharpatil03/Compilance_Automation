@@ -51,6 +51,7 @@ App
 ## Component Dependencies
 
 ### Page Components
+
 ```
 LoginPage
   └── uses: AuthLayout, LoginForm
@@ -63,22 +64,25 @@ DashBoard
 ```
 
 ### Feature Components
+
 ```
 LoginForm
   └── uses: InputField, Button, useAuth, loginService, validateEmailFormat
 
 RegisterForm
-  └── uses: InputField, Button, useAuth, registerService, 
+  └── uses: InputField, Button, useAuth, registerService,
             validateEmailFormat, validatePasswordStrength, validateNameLength
 ```
 
 ### Layout Components
+
 ```
 AuthLayout
   └── Generic wrapper with title, subtitle, and children
 ```
 
 ### UI Components
+
 ```
 InputField
   └── Self-contained with label, error, helperText
@@ -146,7 +150,7 @@ Is user authenticated? (check localStorage)
 Yes → Redirect to /dashboard
     ↓
 No → Show /login
-    
+
 User navigates to protected route
     ↓
 Is authenticated?

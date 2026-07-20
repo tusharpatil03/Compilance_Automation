@@ -1,6 +1,6 @@
 // Types for Tenant API Keys based on server/docs/tenants-api.md
 
-export type ApiKeyStatus = 'active' | 'inactive';
+export type ApiKeyStatus = "active" | "inactive";
 
 export interface ApiKeyItem {
   id: number; // database id
@@ -14,9 +14,9 @@ export interface ApiKeyItem {
 }
 
 export interface PaginationMeta {
-  limit: number,
-  offset: number,
-  count: number,
+  limit: number;
+  offset: number;
+  count: number;
 }
 
 export interface CreateApiKeyRequest {
@@ -30,5 +30,5 @@ export interface CreateApiKeyResponse {
 }
 
 export interface DeactivateApiKeyRequest {
-  status: 'inactive';
+  status: "inactive";
 }

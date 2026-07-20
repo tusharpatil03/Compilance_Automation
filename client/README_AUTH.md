@@ -73,11 +73,13 @@ client/src/
 The application integrates with the following tenant API endpoints:
 
 ### Register
+
 - **Endpoint**: `POST /api/tenants/register`
 - **Payload**: `{ name, email, password }`
 - **Response**: `{ success, message, data: { tenant, auth } }`
 
 ### Login
+
 - **Endpoint**: `POST /api/tenants/login`
 - **Payload**: `{ email, password }`
 - **Response**: `{ success, message, data: { tenant, auth } }`
@@ -85,22 +87,26 @@ The application integrates with the following tenant API endpoints:
 ## Setup Instructions
 
 1. **Install dependencies**
+
    ```bash
    cd client
    pnpm install
    ```
 
 2. **Configure environment variables**
+
    ```bash
    cp .env.example .env
    ```
-   
+
    Edit `.env` and set:
+
    ```
    VITE_API_BASE_URL=http://localhost:3000/api
    ```
 
 3. **Run the development server**
+
    ```bash
    pnpm dev
    ```
@@ -113,6 +119,7 @@ The application integrates with the following tenant API endpoints:
 ## Usage
 
 ### Registration Flow
+
 1. Navigate to `/register`
 2. Fill in company name, email, and password
 3. Form validates inputs client-side
@@ -120,12 +127,14 @@ The application integrates with the following tenant API endpoints:
 5. JWT token and tenant data stored in localStorage
 
 ### Login Flow
+
 1. Navigate to `/login` (or root `/`)
 2. Enter email and password
 3. On success, user is redirected to dashboard
 4. Token automatically included in subsequent API requests
 
 ### Authentication State
+
 - Managed by `AuthContext` using React Context API
 - Token stored in localStorage for persistence
 - Axios interceptors automatically add token to requests
@@ -134,6 +143,7 @@ The application integrates with the following tenant API endpoints:
 ## Validation Rules
 
 ### Registration
+
 - **Name**: 3-255 characters
 - **Email**: Valid email format
 - **Password**: Min 8 characters, must include:
@@ -144,6 +154,7 @@ The application integrates with the following tenant API endpoints:
 - **Confirm Password**: Must match password
 
 ### Login
+
 - **Email**: Valid email format
 - **Password**: Required
 
@@ -152,8 +163,9 @@ The application integrates with the following tenant API endpoints:
 ### UI Components
 
 #### Button
+
 ```tsx
-<Button 
+<Button
   variant="primary|secondary|outline"
   size="small|medium|large"
   fullWidth={boolean}
@@ -165,6 +177,7 @@ The application integrates with the following tenant API endpoints:
 ```
 
 #### InputField
+
 ```tsx
 <InputField
   label="Label"
@@ -179,6 +192,7 @@ The application integrates with the following tenant API endpoints:
 ```
 
 #### Spinner
+
 ```tsx
 <Spinner size="small|medium|large" color="primary|white" />
 ```
@@ -186,6 +200,7 @@ The application integrates with the following tenant API endpoints:
 ### Custom Hooks
 
 #### useAuth
+
 ```tsx
 const { tenant, token, isAuthenticated, isLoading, login, logout } = useAuth();
 ```

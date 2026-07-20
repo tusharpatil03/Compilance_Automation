@@ -12,7 +12,7 @@ import { useForm } from "../../../hooks/formHooks";
 
 export function LoginForm() {
   const { loading, handleLogin } = useLogin();
-  const [error, setCommonError] = useState<string| null>(null);
+  const [error, setCommonError] = useState<string | null>(null);
   const { login } = useAuth();
 
   const {
@@ -55,10 +55,7 @@ export function LoginForm() {
       if (result.ok) {
         login(result.response.data.tenant);
       } else {
-        if (
-          result.error.type === "validation" &&
-          result.error.field !== ""
-        ) {
+        if (result.error.type === "validation" && result.error.field !== "") {
           setError(result.error.field, result.error.message);
         } else {
           setCommonError(result.error.message || "Something went wrong");
@@ -67,15 +64,7 @@ export function LoginForm() {
 
       return;
     },
-    [
-      values,
-      validateFields,
-      handleLogin,
-      clearAllErrors,
-      login,
-      clearErrors,
-      setError,
-    ],
+    [values, validateFields, handleLogin, clearAllErrors, login, clearErrors, setError],
   );
 
   // Merge client-side and server-side errors, with server errors taking precedence

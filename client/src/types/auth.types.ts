@@ -4,14 +4,14 @@ export interface Tenant {
   id: string;
   name: string;
   email: string;
-  status: 'active' | 'inactive' | 'suspended';
+  status: "active" | "inactive" | "suspended";
   created_at: string; // ISO timestamp
   updated_at: string; // ISO timestamp
 }
 
 export interface AuthPayload {
   accessToken: string;
-  tokenType: 'Bearer';
+  tokenType: "Bearer";
   expiresIn: string; // e.g., "1h"
 }
 

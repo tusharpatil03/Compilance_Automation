@@ -1,9 +1,5 @@
 import { useEffect, useState } from "react";
-import {
-  listApiKeys,
-  deactivateApiKey,
-  deleteApiKey,
-} from "../../../services/apiKeyService";
+import { listApiKeys, deactivateApiKey, deleteApiKey } from "../../../services/apiKeyService";
 import type { ApiKeyItem, PaginationMeta } from "../../../types/apiKey.types";
 import { Button } from "../../../components/UI/Button";
 import { Spinner } from "../../../components/UI/Spinner";
@@ -116,11 +112,7 @@ export function ApiKeysList({ refreshSignal = 0 }: ApiKeysListProps) {
                       {k.status}
                     </span>
                   </td>
-                  <td>
-                    {k.expires_at
-                      ? new Date(k.expires_at).toLocaleString()
-                      : "-"}
-                  </td>
+                  <td>{k.expires_at ? new Date(k.expires_at).toLocaleString() : "-"}</td>
                   <td>{new Date(k.created_at).toLocaleString()}</td>
                   <td className={styles.actions}>
                     <Button
@@ -131,11 +123,7 @@ export function ApiKeysList({ refreshSignal = 0 }: ApiKeysListProps) {
                     >
                       Deactivate
                     </Button>
-                    <Button
-                      variant="secondary"
-                      size="small"
-                      onClick={() => handleDelete(k.kid)}
-                    >
+                    <Button variant="secondary" size="small" onClick={() => handleDelete(k.kid)}>
                       Delete
                     </Button>
                   </td>

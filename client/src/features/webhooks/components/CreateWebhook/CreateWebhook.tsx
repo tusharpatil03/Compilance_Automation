@@ -6,10 +6,7 @@ import { useForm } from "../../../../hooks/formHooks";
 import { useFormValidation } from "../../../../hooks/useValidation";
 import { validateHttpsUrl } from "../../../../utils/validation";
 import { useCreateWebhook } from "../../hooks/createWebhook";
-import {
-  WEBHOOK_EVENTS,
-  type WebhookEvent,
-} from "../../types/types";
+import { WEBHOOK_EVENTS, type WebhookEvent } from "../../types/types";
 import styles from "./style.module.css";
 
 type FormData = {
@@ -41,17 +38,14 @@ export function CreateWebhook({ onCreated }: CreateWebhookProps) {
     () => ({
       url: validationErrors.url,
     }),
-    [validationErrors.url]
+    [validationErrors.url],
   );
 
-  const toggleEvent = useCallback(
-    (event: WebhookEvent) => {
-      setSelectedEvents((prev) =>
-        prev.includes(event) ? prev.filter((e) => e !== event) : [...prev, event]
-      );
-    },
-    []
-  );
+  const toggleEvent = useCallback((event: WebhookEvent) => {
+    setSelectedEvents((prev) =>
+      prev.includes(event) ? prev.filter((e) => e !== event) : [...prev, event],
+    );
+  }, []);
 
   const handleSubmit = useCallback(
     async (e: React.FormEvent<HTMLFormElement>) => {
@@ -99,7 +93,7 @@ export function CreateWebhook({ onCreated }: CreateWebhookProps) {
       setError,
       validateFields,
       values.url,
-    ]
+    ],
   );
 
   return (

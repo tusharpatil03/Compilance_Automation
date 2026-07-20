@@ -115,17 +115,11 @@ export function ListWebhooks({ refreshSignal = 0 }: ListWebhooksProps) {
               {webhooks.map((hook) => (
                 <tr key={hook.id}>
                   <td className={styles.url}>{hook.url}</td>
-                  <td>
-                    {hook.events?.length ? hook.events.join(", ") : "-"}
-                  </td>
+                  <td>{hook.events?.length ? hook.events.join(", ") : "-"}</td>
                   <td>{new Date(hook.created_at).toLocaleString()}</td>
                   <td>{new Date(hook.updated_at).toLocaleString()}</td>
                   <td className={styles.actions}>
-                    <Button
-                      variant="secondary"
-                      size="small"
-                      onClick={() => handleDelete(hook.id)}
-                    >
+                    <Button variant="secondary" size="small" onClick={() => handleDelete(hook.id)}>
                       Delete
                     </Button>
                   </td>

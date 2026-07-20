@@ -35,7 +35,7 @@ export function RegisterForm() {
       const { name, value } = e.target;
       setFormData((prev) => ({ ...prev, [name]: value }));
     },
-    [setFormData]
+    [setFormData],
   );
 
   const handleSubmit = useCallback(
@@ -47,10 +47,7 @@ export function RegisterForm() {
         name: validateName(formData.name, 3, 100),
         email: validateEmail(formData.email),
         password: validatePassword(formData.password),
-        confirmPassword: validatePasswordMatch(
-          formData.password,
-          formData.confirmPassword
-        ),
+        confirmPassword: validatePasswordMatch(formData.password, formData.confirmPassword),
       };
 
       if (!validateFields(validations)) {
@@ -66,7 +63,7 @@ export function RegisterForm() {
         navigate("/dashboard");
       }
     },
-    [formData, validateFields, handleRegister, login, navigate]
+    [formData, validateFields, handleRegister, login, navigate],
   );
 
   // Merge client-side and server-side errors, with server errors taking precedence
@@ -137,12 +134,7 @@ export function RegisterForm() {
         required
       />
 
-      <Button
-        type="submit"
-        fullWidth
-        isLoading={loading}
-        disabled={loading}
-      >
+      <Button type="submit" fullWidth isLoading={loading} disabled={loading}>
         Register
       </Button>
 

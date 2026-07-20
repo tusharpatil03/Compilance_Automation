@@ -42,7 +42,8 @@
   border-collapse: collapse;
 }
 
-.table th, .table td {
+.table th,
+.table td {
   border-bottom: 1px solid #e5e7eb;
   text-align: left;
   padding: 0.5rem;
