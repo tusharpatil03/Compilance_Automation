@@ -1,0 +1,118 @@
+table customers {
+  id integer [pk, not null]
+  tenant_id integer [not null]
+  external_customer_id varchar [not null]
+  name varchar [not null]
+  email varchar [not null]
+  phone varchar [not null]
+  risk_profile_id integer
+  status varchar [not null, default: 'active']
+  created_at timestamp [not null, default: `now()`]
+  updated_at timestamp [not null, default: `now()`]
+}
+
+table tenants {
+  id integer [pk, not null]
+  name varchar(255) [not null, unique]
+  email varchar(255) [not null, unique]
+  password varchar(255) [not null]
+  salt varchar(255) [not null]
+  status tenant_status [not null, default: 'active']
+  created_at timestamp [not null, default: `now()`]
+  updated_at timestamp [not null, default: `now()`]
+}
+
+table tenants_api_keys {
+  id integer [pk, not null]
+  tenant_id integer [not null]
+  api_key varchar(255) [not null]
+  api_key_hash varchar(512) [not null]
+  key_prefix varchar(20) [not null]
+  status apikey_status [not null, default: 'active']
+  created_at timestamp [not null, default: `now()`]
+  updated_at timestamp [not null, default: `now()`]
+  expires_at timestamp
+  revoked_at timestamp
+  rotated_from_key_id integer
+
+  indexes {
+    (tenant_id, key_prefix) [name: 'tenant_keyprefix', unique]
+    tenant_id [name: 'ix_tenantapikey_tenant']
+  }
+}
+
+table risk_profile {
+  id integer [pk, not null]
+  user_id integer [not null]
+  risk_score integer [not null, default: 0]
+  created_at timestamp [not null, default: `now()`]
+  updated_at timestamp [not null, default: `now()`]
+}
+
+table event_store {
+  id integer [pk, not null]
+  tenant_id integer [not null]
+  aggregate_id integer [not null]
+  event_type varchar(255) [not null]
+  payload jsonb [not null]
+  metadata jsonb [not null]
+  occurred_at timestamp [not null, default: `now()`]
+}
+
+table outbox {
+  id integer [pk, not null]
+  event_id integer [not null]
+  event_type varchar(255) [not null]
+  tenant_id integer [not null]
+  payload jsonb [not null]
+  aggregate_id integer [not null]
+  metadata jsonb [not null]
+  occurred_at timestamp [not null, default: `now()`]
+  processed_at timestamp
+  processed integer [not null, default: 0]
+  retries integer [not null, default: 0]
+
+  indexes {
+    (tenant_id, event_type) [name: 'ix_outbox_tenant_event']
+    processed_at [name: 'ix_outbox_processed_at']
+  }
+}
+
+table webhooks {
+  id integer [pk, not null]
+  tenant_id integer [not null]
+  url varchar(2048) [not null]
+  events jsonb
+  secret varchar(255) [not null]
+  created_at timestamp [not null, default: `now()`]
+  updated_at timestamp [not null, default: `now()`]
+}
+
+table documents {
+  id integer [pk, not null]
+  user_id integer [not null]
+  tenant_id integer [not null]
+  document_type varchar [not null]
+  document_url varchar [not null]
+  status varchar [not null, default: 'pending']
+  created_at timestamp [not null, default: `now()`]
+  updated_at timestamp [not null, default: `now()`]
+}
+
+ref customers_tenant_id_tenants_id_fk: customers.tenant_id > tenants.id [delete: no action, update: no action]
+
+ref customers_risk_profile_id_customers_id_fk: customers.risk_profile_id > customers.id [delete: no action, update: no action]
+
+ref tenants_api_keys_tenant_id_tenants_id_fk: tenants_api_keys.tenant_id > tenants.id [delete: no action, update: no action]
+
+ref tenants_api_keys_rotated_from_key_id_tenants_api_keys_id_fk: tenants_api_keys.rotated_from_key_id > tenants_api_keys.id [delete: no action, update: no action]
+
+ref risk_profile_user_id_customers_id_fk: risk_profile.user_id > customers.id [delete: no action, update: no action]
+
+ref outbox_event_id_event_store_id_fk: outbox.event_id > event_store.id [delete: no action, update: no action]
+
+ref webhooks_tenant_id_tenants_id_fk: webhooks.tenant_id > tenants.id [delete: no action, update: no action]
+
+ref documents_user_id_customers_id_fk: documents.user_id > customers.id [delete: no action, update: no action]
+
+ref documents_tenant_id_tenants_id_fk: documents.tenant_id > tenants.id [delete: no action, update: no action]

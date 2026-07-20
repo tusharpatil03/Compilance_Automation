@@ -28,11 +28,11 @@ describe('Login Controller', () => {
   beforeEach(() => {
     mockJson = jest.fn();
     mockStatus = jest.fn().mockReturnValue({ json: mockJson });
-    
+
     mockRequest = {
       body: {},
     };
-    
+
     mockResponse = {
       status: mockStatus as any,
       json: mockJson as any,
@@ -46,7 +46,7 @@ describe('Login Controller', () => {
       // Arrange
       const email = randomEmail();
       const password = generateStrongPassword();
-      
+
       mockRequest.body = {
         email,
         password,
@@ -69,9 +69,12 @@ describe('Login Controller', () => {
         token: mockToken,
       });
 
-      (AuthService as jest.MockedClass<typeof AuthService>).mockImplementation(() => ({
-        loginTenant: mockLoginTenant,
-      } as any));
+      (AuthService as jest.MockedClass<typeof AuthService>).mockImplementation(
+        () =>
+          ({
+            loginTenant: mockLoginTenant,
+          }) as any
+      );
 
       // Act
       await loginTenant(mockRequest as Request, mockResponse as Response);
@@ -111,9 +114,12 @@ describe('Login Controller', () => {
         token: 'token',
       });
 
-      (AuthService as jest.MockedClass<typeof AuthService>).mockImplementation(() => ({
-        loginTenant: mockLoginTenant,
-      } as any));
+      (AuthService as jest.MockedClass<typeof AuthService>).mockImplementation(
+        () =>
+          ({
+            loginTenant: mockLoginTenant,
+          }) as any
+      );
 
       // Act
       await loginTenant(mockRequest as Request, mockResponse as Response);
@@ -143,9 +149,12 @@ describe('Login Controller', () => {
         token: 'token',
       });
 
-      (AuthService as jest.MockedClass<typeof AuthService>).mockImplementation(() => ({
-        loginTenant: mockLoginTenant,
-      } as any));
+      (AuthService as jest.MockedClass<typeof AuthService>).mockImplementation(
+        () =>
+          ({
+            loginTenant: mockLoginTenant,
+          }) as any
+      );
 
       // Act
       await loginTenant(mockRequest as Request, mockResponse as Response);
@@ -175,9 +184,12 @@ describe('Login Controller', () => {
         token: 'jwt_token_abc',
       });
 
-      (AuthService as jest.MockedClass<typeof AuthService>).mockImplementation(() => ({
-        loginTenant: mockLoginTenant,
-      } as any));
+      (AuthService as jest.MockedClass<typeof AuthService>).mockImplementation(
+        () =>
+          ({
+            loginTenant: mockLoginTenant,
+          }) as any
+      );
 
       // Act
       await loginTenant(mockRequest as Request, mockResponse as Response);
@@ -204,9 +216,12 @@ describe('Login Controller', () => {
         new Error('Invalid email or password')
       );
 
-      (AuthService as jest.MockedClass<typeof AuthService>).mockImplementation(() => ({
-        loginTenant: mockLoginTenant,
-      } as any));
+      (AuthService as jest.MockedClass<typeof AuthService>).mockImplementation(
+        () =>
+          ({
+            loginTenant: mockLoginTenant,
+          }) as any
+      );
 
       // Act
       await loginTenant(mockRequest as Request, mockResponse as Response);
@@ -230,9 +245,12 @@ describe('Login Controller', () => {
         new Error('Tenant account is not active')
       );
 
-      (AuthService as jest.MockedClass<typeof AuthService>).mockImplementation(() => ({
-        loginTenant: mockLoginTenant,
-      } as any));
+      (AuthService as jest.MockedClass<typeof AuthService>).mockImplementation(
+        () =>
+          ({
+            loginTenant: mockLoginTenant,
+          }) as any
+      );
 
       // Act
       await loginTenant(mockRequest as Request, mockResponse as Response);
@@ -256,9 +274,12 @@ describe('Login Controller', () => {
         new Error('Database connection failed')
       );
 
-      (AuthService as jest.MockedClass<typeof AuthService>).mockImplementation(() => ({
-        loginTenant: mockLoginTenant,
-      } as any));
+      (AuthService as jest.MockedClass<typeof AuthService>).mockImplementation(
+        () =>
+          ({
+            loginTenant: mockLoginTenant,
+          }) as any
+      );
 
       // Act
       await loginTenant(mockRequest as Request, mockResponse as Response);
@@ -279,11 +300,16 @@ describe('Login Controller', () => {
         password: 'Password123!',
       };
 
-      const mockLoginTenant = (jest.fn() as any).mockRejectedValue('String error');
+      const mockLoginTenant = (jest.fn() as any).mockRejectedValue(
+        'String error'
+      );
 
-      (AuthService as jest.MockedClass<typeof AuthService>).mockImplementation(() => ({
-        loginTenant: mockLoginTenant,
-      } as any));
+      (AuthService as jest.MockedClass<typeof AuthService>).mockImplementation(
+        () =>
+          ({
+            loginTenant: mockLoginTenant,
+          }) as any
+      );
 
       // Act
       await loginTenant(mockRequest as Request, mockResponse as Response);
@@ -299,8 +325,10 @@ describe('Login Controller', () => {
 
     it('should log errors to console', async () => {
       // Arrange
-      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
-      
+      const consoleErrorSpy = jest
+        .spyOn(console, 'error')
+        .mockImplementation(() => {});
+
       mockRequest.body = {
         email: randomEmail(),
         password: 'Password123!',
@@ -309,9 +337,12 @@ describe('Login Controller', () => {
       const error = new Error('Test error');
       const mockLoginTenant = (jest.fn() as any).mockRejectedValue(error);
 
-      (AuthService as jest.MockedClass<typeof AuthService>).mockImplementation(() => ({
-        loginTenant: mockLoginTenant,
-      } as any));
+      (AuthService as jest.MockedClass<typeof AuthService>).mockImplementation(
+        () =>
+          ({
+            loginTenant: mockLoginTenant,
+          }) as any
+      );
 
       // Act
       await loginTenant(mockRequest as Request, mockResponse as Response);
@@ -346,9 +377,12 @@ describe('Login Controller', () => {
         token: 'token',
       });
 
-      (AuthService as jest.MockedClass<typeof AuthService>).mockImplementation(() => ({
-        loginTenant: mockLoginTenant,
-      } as any));
+      (AuthService as jest.MockedClass<typeof AuthService>).mockImplementation(
+        () =>
+          ({
+            loginTenant: mockLoginTenant,
+          }) as any
+      );
 
       // Act
       await loginTenant(mockRequest as Request, mockResponse as Response);
@@ -378,9 +412,12 @@ describe('Login Controller', () => {
         token: 'token',
       });
 
-      (AuthService as jest.MockedClass<typeof AuthService>).mockImplementation(() => ({
-        loginTenant: mockLoginTenant,
-      } as any));
+      (AuthService as jest.MockedClass<typeof AuthService>).mockImplementation(
+        () =>
+          ({
+            loginTenant: mockLoginTenant,
+          }) as any
+      );
 
       // Act
       await loginTenant(mockRequest as Request, mockResponse as Response);
@@ -410,9 +447,12 @@ describe('Login Controller', () => {
         token: 'token',
       });
 
-      (AuthService as jest.MockedClass<typeof AuthService>).mockImplementation(() => ({
-        loginTenant: mockLoginTenant,
-      } as any));
+      (AuthService as jest.MockedClass<typeof AuthService>).mockImplementation(
+        () =>
+          ({
+            loginTenant: mockLoginTenant,
+          }) as any
+      );
 
       // Act
       await loginTenant(mockRequest as Request, mockResponse as Response);
@@ -445,9 +485,12 @@ describe('Login Controller', () => {
         token: 'token',
       });
 
-      (AuthService as jest.MockedClass<typeof AuthService>).mockImplementation(() => ({
-        loginTenant: mockLoginTenant,
-      } as any));
+      (AuthService as jest.MockedClass<typeof AuthService>).mockImplementation(
+        () =>
+          ({
+            loginTenant: mockLoginTenant,
+          }) as any
+      );
 
       // Act
       await loginTenant(mockRequest as Request, mockResponse as Response);
@@ -467,9 +510,12 @@ describe('Login Controller', () => {
         new Error('Invalid email or password')
       );
 
-      (AuthService as jest.MockedClass<typeof AuthService>).mockImplementation(() => ({
-        loginTenant: mockLoginTenant,
-      } as any));
+      (AuthService as jest.MockedClass<typeof AuthService>).mockImplementation(
+        () =>
+          ({
+            loginTenant: mockLoginTenant,
+          }) as any
+      );
 
       // Act
       await loginTenant(mockRequest as Request, mockResponse as Response);
@@ -489,9 +535,12 @@ describe('Login Controller', () => {
         new Error('Account is not active')
       );
 
-      (AuthService as jest.MockedClass<typeof AuthService>).mockImplementation(() => ({
-        loginTenant: mockLoginTenant,
-      } as any));
+      (AuthService as jest.MockedClass<typeof AuthService>).mockImplementation(
+        () =>
+          ({
+            loginTenant: mockLoginTenant,
+          }) as any
+      );
 
       // Act
       await loginTenant(mockRequest as Request, mockResponse as Response);
@@ -521,9 +570,12 @@ describe('Login Controller', () => {
         token: 'token',
       });
 
-      (AuthService as jest.MockedClass<typeof AuthService>).mockImplementation(() => ({
-        loginTenant: mockLoginTenant,
-      } as any));
+      (AuthService as jest.MockedClass<typeof AuthService>).mockImplementation(
+        () =>
+          ({
+            loginTenant: mockLoginTenant,
+          }) as any
+      );
 
       // Act
       await loginTenant(mockRequest as Request, mockResponse as Response);
@@ -545,9 +597,12 @@ describe('Login Controller', () => {
         new Error('Email is required')
       );
 
-      (AuthService as jest.MockedClass<typeof AuthService>).mockImplementation(() => ({
-        loginTenant: mockLoginTenant,
-      } as any));
+      (AuthService as jest.MockedClass<typeof AuthService>).mockImplementation(
+        () =>
+          ({
+            loginTenant: mockLoginTenant,
+          }) as any
+      );
 
       // Act
       await loginTenant(mockRequest as Request, mockResponse as Response);
@@ -566,9 +621,12 @@ describe('Login Controller', () => {
         new Error('Password is required')
       );
 
-      (AuthService as jest.MockedClass<typeof AuthService>).mockImplementation(() => ({
-        loginTenant: mockLoginTenant,
-      } as any));
+      (AuthService as jest.MockedClass<typeof AuthService>).mockImplementation(
+        () =>
+          ({
+            loginTenant: mockLoginTenant,
+          }) as any
+      );
 
       // Act
       await loginTenant(mockRequest as Request, mockResponse as Response);
@@ -585,9 +643,12 @@ describe('Login Controller', () => {
         new Error('Email and password are required')
       );
 
-      (AuthService as jest.MockedClass<typeof AuthService>).mockImplementation(() => ({
-        loginTenant: mockLoginTenant,
-      } as any));
+      (AuthService as jest.MockedClass<typeof AuthService>).mockImplementation(
+        () =>
+          ({
+            loginTenant: mockLoginTenant,
+          }) as any
+      );
 
       // Act
       await loginTenant(mockRequest as Request, mockResponse as Response);

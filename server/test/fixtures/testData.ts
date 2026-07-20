@@ -14,12 +14,12 @@ export const validPasswords = [
 
 // sample invalid passwords for testing
 export const invalidPasswords = [
-  'short1!',            // Too short
-  'nouppercase123!',    // No uppercase
-  'NOLOWERCASE123!',    // No lowercase
-  'NoNumber!',          // No number
-  'NoSpecial123',       // No special character
-  'password',           // Too weak
+  'short1!', // Too short
+  'nouppercase123!', // No uppercase
+  'NOLOWERCASE123!', // No lowercase
+  'NoNumber!', // No number
+  'NoSpecial123', // No special character
+  'password', // Too weak
 ];
 
 // sample tenants data

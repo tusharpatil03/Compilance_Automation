@@ -32,6 +32,7 @@ Request body (JSON):
 ```
 
 Field details:
+
 - name (string): Tenant/company name. Required.
 - email (string): Tenant email. Required. Must be unique.
 - password (string): Plain-text password. Required. Backend will hash the password and store salt.
@@ -61,6 +62,7 @@ Success response (201 Created):
 ```
 
 Notes:
+
 - The returned `tenant` object will NOT include the `password` or `salt` fields.
 - The `accessToken` is a JWT signed by the server. The frontend should store it securely (e.g., in memory, or httpOnly cookie via server-set cookie). For SPAs, localStorage/sessionStorage is common but has XSS risks.
 
@@ -101,7 +103,11 @@ Common error responses:
 Example fetch (frontend):
 
 ```js
-const payload = { name: 'Acme', email: 'user@example.com', password: 'Password123!' };
+const payload = {
+  name: 'Acme',
+  email: 'user@example.com',
+  password: 'Password123!',
+};
 const res = await fetch('/api/tenants/register', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
@@ -131,6 +137,7 @@ Request body (JSON):
 ```
 
 Field details:
+
 - email (string): Tenant email. Required.
 - password (string): Tenant password. Required.
 
@@ -217,10 +224,12 @@ if (res.ok) {
 ## Frontend Notes and Examples
 
 Headers:
+
 - All requests should include Content-Type: application/json for JSON bodies.
 - For authenticated requests (beyond login/register), include: Authorization: Bearer <token>
 
 Security recommendations:
+
 - Prefer httpOnly secure cookies for storing tokens when possible to mitigate XSS.
 - If storing tokens in browser storage, implement CSRF protection on state-changing endpoints.
 
@@ -267,10 +276,16 @@ Quick axios example:
 import axios from 'axios';
 
 const register = (payload: RegisterRequest) =>
-  axios.post<ApiResponse<{ tenant: Tenant; auth: AuthPayload }>>('/api/tenants/register', payload);
+  axios.post<ApiResponse<{ tenant: Tenant; auth: AuthPayload }>>(
+    '/api/tenants/register',
+    payload
+  );
 
 const login = (payload: LoginRequest) =>
-  axios.post<ApiResponse<{ tenant: Tenant; auth: AuthPayload }>>('/api/tenants/login', payload);
+  axios.post<ApiResponse<{ tenant: Tenant; auth: AuthPayload }>>(
+    '/api/tenants/login',
+    payload
+  );
 ```
 
 ---
@@ -324,10 +339,12 @@ Success response (201 Created):
 ```
 
 Notes:
+
 - The `api_key` field is shown only once; clients must store it securely.
 - The server never returns or exposes `api_key_hash`.
 
 Common error responses:
+
 - 400 Bad Request - Missing input or validation error
 - 409 Conflict - An active API key already exists (business rule)
 
@@ -364,6 +381,7 @@ Success response (200 OK):
 ```
 
 Notes:
+
 - `api_key_hash` is not returned.
 - Use `limit` and `offset` for pagination. The server will clamp `limit` to a safe maximum.
 
@@ -390,6 +408,7 @@ Success response (200 OK):
 ```
 
 Notes:
+
 - The operation is idempotent: deactivating an already inactive key succeeds with 200.
 - If the key does not belong to the authenticated tenant, server returns 403 Forbidden.
 
@@ -407,6 +426,7 @@ Success response (200 OK):
 ```
 
 Errors:
+
 - 400 Bad Request - Missing ID
 - 403 Forbidden - Attempt to remove a key that belongs to another tenant
 - 404 Not Found - Key not found
@@ -414,10 +434,11 @@ Errors:
 ---
 
 Security and lifecycle guidance
+
 - Show the raw API secret only once at creation time. Encourage clients to rotate and store the key securely.
 - Track `last_used_at` server-side to detect stale keys and help with audits.
 - Use short expiry windows if appropriate and rotate keys regularly.
 
 SDK / frontend tips
-- After creating a key, immediately store the provided `api_key` securely (e.g., server-managed secret or secure vault). Do not rely on client-side storage if you can avoid it.
 
+- After creating a key, immediately store the provided `api_key` securely (e.g., server-managed secret or secure vault). Do not rely on client-side storage if you can avoid it.

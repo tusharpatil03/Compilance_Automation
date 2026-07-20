@@ -2,10 +2,20 @@
  * Unit tests for AuthService
  * Tests tenant registration, login, and authentication logic
  */
-import {jest, describe, it, expect, beforeEach, afterEach} from '@jest/globals';
+import {
+  jest,
+  describe,
+  it,
+  expect,
+  beforeEach,
+  afterEach,
+} from '@jest/globals';
 import { AuthService } from '../../../src/modules/tenant/services/AuthService';
 import { MockTenantRepository } from '../../mocks/mockTenantRepository';
-import { TenantRegisterInput, TenantLoginInput } from '../../../src/modules/tenant/zodSchema';
+import {
+  TenantRegisterInput,
+  TenantLoginInput,
+} from '../../../src/modules/tenant/zodSchema';
 import { Tenant } from '../../../src/modules/tenant/schema';
 import { randomEmail, generateStrongPassword } from '../../helpers/testHelpers';
 import { MockUnitOfWork } from '../../mocks/mockUnitOfWork';
@@ -24,21 +34,31 @@ describe('AuthService', () => {
 
   beforeEach(() => {
     mockedSecurity.hashPassword.mockImplementation((password: string) => ({
-        hashedPassword: `hashed_${password}`,
-        salt: `salt_${password}`,
+      hashedPassword: `hashed_${password}`,
+      salt: `salt_${password}`,
     }));
-    mockedSecurity.comparePassword.mockImplementation((password: string, hashedPassword: string, salt: string) => {
-        return hashedPassword === `hashed_${password}` && salt === `salt_${password}`;
-    });
-    mockedSecurity.generateJWTToken.mockImplementation((payload: any) => `jwt_token_${payload.id}_${payload.email}`);
+    mockedSecurity.comparePassword.mockImplementation(
+      (password: string, hashedPassword: string, salt: string) => {
+        return (
+          hashedPassword === `hashed_${password}` && salt === `salt_${password}`
+        );
+      }
+    );
+    mockedSecurity.generateJWTToken.mockImplementation(
+      (payload: any) => `jwt_token_${payload.id}_${payload.email}`
+    );
 
     mockRepository = new MockTenantRepository();
-    createUow = () => new MockUnitOfWork(() => ({}), (Repo, tx) => {
-      if (Repo === TenantRepository) {
-        return mockRepository as unknown as InstanceType<typeof Repo>;
-      }
-      return new Repo(tx);
-    });
+    createUow = () =>
+      new MockUnitOfWork(
+        () => ({}),
+        (Repo, tx) => {
+          if (Repo === TenantRepository) {
+            return mockRepository as unknown as InstanceType<typeof Repo>;
+          }
+          return new Repo(tx);
+        }
+      );
     authService = new AuthService();
   });
 
@@ -76,10 +96,14 @@ describe('AuthService', () => {
       await authService.registerTenant(uow, validRegisterInput);
 
       // Assert
-      expect(security.hashPassword).toHaveBeenCalledWith(validRegisterInput.password);
-      
+      expect(security.hashPassword).toHaveBeenCalledWith(
+        validRegisterInput.password
+      );
+
       // Verify tenant was created with hashed password
-      const tenant = await mockRepository.getTenantByEmail(validRegisterInput.email);
+      const tenant = await mockRepository.getTenantByEmail(
+        validRegisterInput.email
+      );
       expect(tenant?.password).toBe(`hashed_${validRegisterInput.password}`);
       expect(tenant?.salt).toBe(`salt_${validRegisterInput.password}`);
     });
@@ -105,7 +129,7 @@ describe('AuthService', () => {
 
       // Assert
       expect(result.tenant.status).toBe('active');
-      
+
       const tenant = await mockRepository.getTenantById(result.tenant.id);
       expect(tenant?.status).toBe('active');
     });
@@ -129,7 +153,7 @@ describe('AuthService', () => {
         email: 'test@example.com',
       });
 
-      // Act - Try with different case 
+      // Act - Try with different case
       // const uow = new MockUnitOfWork();(should succeed if case-sensitive)
       const result = await authService.registerTenant(uow, {
         ...validRegisterInput,
@@ -202,7 +226,9 @@ describe('AuthService', () => {
       const uow = createUow();
 
       const result = await authService.registerTenant(uow, registerInput);
-      registeredTenant = await mockRepository.getTenantById(result.tenant.id) as Tenant;
+      registeredTenant = (await mockRepository.getTenantById(
+        result.tenant.id
+      )) as Tenant;
     });
 
     it('should successfully login with correct credentials', async () => {
@@ -264,11 +290,10 @@ describe('AuthService', () => {
       };
       const uow = createUow();
 
-
       // Act & Assert
-      await expect(
-        authService.loginTenant(uow, loginInput)
-      ).rejects.toThrow('Invalid email or password');
+      await expect(authService.loginTenant(uow, loginInput)).rejects.toThrow(
+        'Invalid email or password'
+      );
     });
 
     it('should throw error with incorrect password', async () => {
@@ -280,38 +305,44 @@ describe('AuthService', () => {
       const uow = createUow();
 
       // Act & Assert
-      await expect(
-        authService.loginTenant(uow, loginInput)
-      ).rejects.toThrow('Invalid email or password');
+      await expect(authService.loginTenant(uow, loginInput)).rejects.toThrow(
+        'Invalid email or password'
+      );
     });
 
     it('should throw error if tenant status is inactive', async () => {
       // Arrange - Update tenant to inactive
-      await mockRepository.updateTenant(registeredTenant.id, { status: 'inactive' });
+      await mockRepository.updateTenant(registeredTenant.id, {
+        status: 'inactive',
+      });
       const loginInput: TenantLoginInput = { email, password };
       const uow = createUow();
 
       // Act & Assert
-      await expect(
-        authService.loginTenant(uow, loginInput)
-      ).rejects.toThrow('Tenant account is not active');
+      await expect(authService.loginTenant(uow, loginInput)).rejects.toThrow(
+        'Tenant account is not active'
+      );
     });
 
     it('should throw error if tenant status is suspended', async () => {
       // Arrange - Update tenant to suspended
-      await mockRepository.updateTenant(registeredTenant.id, { status: 'suspended' });
+      await mockRepository.updateTenant(registeredTenant.id, {
+        status: 'suspended',
+      });
       const loginInput: TenantLoginInput = { email, password };
       const uow = createUow();
 
       // Act & Assert
-      await expect(
-        authService.loginTenant(uow, loginInput)
-      ).rejects.toThrow('Tenant account is not active');
+      await expect(authService.loginTenant(uow, loginInput)).rejects.toThrow(
+        'Tenant account is not active'
+      );
     });
 
     it('should allow login only for active tenants', async () => {
       // Arrange - Ensure tenant is active
-      await mockRepository.updateTenant(registeredTenant.id, { status: 'active' });
+      await mockRepository.updateTenant(registeredTenant.id, {
+        status: 'active',
+      });
       const loginInput: TenantLoginInput = { email, password };
       const uow = createUow();
 
@@ -361,7 +392,6 @@ describe('AuthService', () => {
       };
       const uow = createUow();
 
-
       // Act
       const result = await authService.registerTenant(uow, registerInput);
 
@@ -395,7 +425,7 @@ describe('AuthService', () => {
       // Arrange
       const email = randomEmail();
       const password = 'Password123!';
-      
+
       const registerInput: TenantRegisterInput = {
         name: 'Test Company',
         email,
@@ -404,8 +434,14 @@ describe('AuthService', () => {
       const uow = createUow();
 
       // Act
-      const registerResult = await authService.registerTenant(uow, registerInput);
-      const loginResult = await authService.loginTenant(uow, { email, password });
+      const registerResult = await authService.registerTenant(
+        uow,
+        registerInput
+      );
+      const loginResult = await authService.loginTenant(uow, {
+        email,
+        password,
+      });
 
       // Assert - Both responses should have same structure
       expect(Object.keys(registerResult.tenant).sort()).toEqual(
@@ -432,7 +468,10 @@ describe('AuthService', () => {
       expect(registerResult.token).toBeDefined();
 
       // Login
-      const loginResult = await authService.loginTenant(uow, { email, password });
+      const loginResult = await authService.loginTenant(uow, {
+        email,
+        password,
+      });
 
       expect(loginResult.tenant.id).toBe(registerResult.tenant.id);
       expect(loginResult.tenant.email).toBe(email);
@@ -475,7 +514,9 @@ describe('AuthService', () => {
       ).resolves.toBeDefined();
 
       // Suspend tenant
-      await mockRepository.updateTenant(registerResult.tenant.id, { status: 'suspended' });
+      await mockRepository.updateTenant(registerResult.tenant.id, {
+        status: 'suspended',
+      });
 
       // Assert - Login should fail after suspension
       await expect(
@@ -504,8 +545,14 @@ describe('AuthService', () => {
       });
 
       // Act - Both should be able to login independently
-      const login1 = await authService.loginTenant(uow, { email: email1, password: password1 });
-      const login2 = await authService.loginTenant(uow, { email: email2, password: password2 });
+      const login1 = await authService.loginTenant(uow, {
+        email: email1,
+        password: password1,
+      });
+      const login2 = await authService.loginTenant(uow, {
+        email: email2,
+        password: password2,
+      });
 
       // Assert
       expect(login1.tenant.id).toBe(tenant1.tenant.id);

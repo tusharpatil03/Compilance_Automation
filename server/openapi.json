@@ -1,0 +1,439 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Compliance Automation Server API",
+    "version": "1.0.0",
+    "description": "OpenAPI specification for the server APIs. This first slice covers the customer module at POST /user/sync.\n\nNote: the current request pipeline validates the body before auth, so the implementation must preserve tenant_id for the auth middleware to read it."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000",
+      "description": "Local development server"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Customer",
+      "description": "Customer synchronization and risk profile bootstrap endpoints"
+    }
+  ],
+  "paths": {
+    "/user/sync": {
+      "post": {
+        "tags": ["Customer"],
+        "summary": "Sync a customer record",
+        "description": "Creates or updates a customer for the authenticated tenant and initializes a risk profile when needed. The request body must include the tenant API key fields used by the auth middleware.",
+        "operationId": "syncCustomer",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CustomerSyncRequest"
+              },
+              "examples": {
+                "success": {
+                  "summary": "Valid customer sync request",
+                  "value": {
+                    "tenant_id": 1,
+                    "api_key_id": "ak_live_123abc",
+                    "api_key": "sk_live_very-secret-key",
+                    "external_customer_id": "cust_1001",
+                    "name": "Ada Lovelace",
+                    "email": "ada@example.com",
+                    "phone": "+15551234567"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Customer synced successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomerSyncSuccessResponse"
+                },
+                "examples": {
+                  "success": {
+                    "value": {
+                      "success": true,
+                      "status": 200,
+                      "message": "User synced successfully",
+                      "data": {
+                        "id": 12,
+                        "tenant_id": 1,
+                        "external_customer_id": "cust_1001",
+                        "name": "Ada Lovelace",
+                        "email": "ada@example.com",
+                        "phone": "+15551234567",
+                        "risk_profile_id": 42,
+                        "status": "active",
+                        "created_at": "2026-07-19T12:00:00.000Z",
+                        "updated_at": "2026-07-19T12:00:00.000Z"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation or missing field error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "missingField": {
+                    "value": {
+                      "success": false,
+                      "status": 400,
+                      "message": "Missing required field: api_key",
+                      "error": {
+                        "type": "VALIDATION_ERROR",
+                        "code": "ERR_400_MISSING_FIELD",
+                        "field": "api_key"
+                      }
+                    }
+                  },
+                  "validation": {
+                    "value": {
+                      "success": false,
+                      "status": 400,
+                      "message": "Invalid email address",
+                      "error": {
+                        "type": "VALIDATION_ERROR",
+                        "code": "ERR_400_VALIDATION_ERROR",
+                        "field": "email",
+                        "issues": [
+                          {
+                            "field": "email",
+                            "message": "Invalid email address",
+                            "code": "invalid_format"
+                          }
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid or missing API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "authRequired": {
+                    "value": {
+                      "success": false,
+                      "status": 401,
+                      "message": "Authentication required",
+                      "error": {
+                        "type": "AUTH_ERROR",
+                        "code": "ERR_401_AUTH_REQUIRED"
+                      }
+                    }
+                  },
+                  "invalidApiKey": {
+                    "value": {
+                      "success": false,
+                      "status": 401,
+                      "message": "Invalid API key",
+                      "error": {
+                        "type": "AUTH_ERROR",
+                        "code": "ERR_401_INVALID_API_KEY"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict while syncing the customer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "conflict": {
+                    "value": {
+                      "success": false,
+                      "status": 409,
+                      "message": "Already Exists: customer with this external_customer_id",
+                      "error": {
+                        "type": "CONFLICT",
+                        "code": "ERR_409_CONFLICT"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "serverError": {
+                    "value": {
+                      "success": false,
+                      "status": 500,
+                      "message": "failed to sync new user",
+                      "error": {
+                        "type": "SERVER_ERROR",
+                        "code": "ERR_500_INTERNAL_ERROR"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "CustomerSyncRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "tenant_id",
+          "api_key_id",
+          "api_key",
+          "external_customer_id",
+          "name",
+          "email",
+          "phone"
+        ],
+        "properties": {
+          "tenant_id": {
+            "oneOf": [
+              {
+                "type": "integer",
+                "minimum": 1
+              },
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              }
+            ],
+            "description": "Tenant identifier used by the API key middleware."
+          },
+          "api_key_id": {
+            "type": "string",
+            "minLength": 1,
+            "description": "API key prefix or identifier."
+          },
+          "api_key": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Raw API key secret."
+          },
+          "external_customer_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "minLength": 1
+          },
+          "phone": {
+            "type": "string",
+            "minLength": 7
+          }
+        }
+      },
+      "Customer": {
+        "type": "object",
+        "required": [
+          "id",
+          "tenant_id",
+          "external_customer_id",
+          "name",
+          "email",
+          "phone",
+          "status",
+          "created_at",
+          "updated_at"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "tenant_id": {
+            "type": "integer"
+          },
+          "external_customer_id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "phone": {
+            "type": "string"
+          },
+          "risk_profile_id": {
+            "oneOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "status": {
+            "type": "string",
+            "example": "active"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ValidationIssue": {
+        "type": "object",
+        "required": ["field", "message"],
+        "properties": {
+          "field": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          }
+        }
+      },
+      "ErrorPayload": {
+        "type": "object",
+        "required": ["type", "code"],
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "VALIDATION_ERROR",
+              "AUTH_ERROR",
+              "FORBIDDEN",
+              "NOT_FOUND",
+              "CONFLICT",
+              "SERVER_ERROR"
+            ]
+          },
+          "code": {
+            "type": "string",
+            "enum": [
+              "ERR_400_VALIDATION_ERROR",
+              "ERR_400_INVALID_EMAIL",
+              "ERR_400_INVALID_PASSWORD",
+              "ERR_400_INVALID_URL",
+              "ERR_400_INVALID_TIMESTAMP",
+              "ERR_400_INVALID_ID",
+              "ERR_400_MISSING_FIELD",
+              "ERR_401_AUTH_REQUIRED",
+              "ERR_401_INVALID_TOKEN",
+              "ERR_401_INVALID_API_KEY",
+              "ERR_401_INVALID_CREDENTIALS",
+              "ERR_401_TOKEN_EXPIRED",
+              "ERR_403_FORBIDDEN",
+              "ERR_403_INSUFFICIENT_PERMISSIONS",
+              "ERR_403_KEY_DOES_NOT_BELONG",
+              "ERR_404_NOT_FOUND",
+              "ERR_404_TENANT_NOT_FOUND",
+              "ERR_404_API_KEY_NOT_FOUND",
+              "ERR_404_WEBHOOK_NOT_FOUND",
+              "ERR_409_CONFLICT",
+              "ERR_409_TENANT_EXISTS",
+              "ERR_409_KEY_EXISTS",
+              "ERR_409_WEBHOOK_EXISTS",
+              "ERR_409_DUPLICATE_EMAIL",
+              "ERR_500_INTERNAL_ERROR",
+              "ERR_500_DATABASE_ERROR",
+              "ERR_500_ENCRYPTION_ERROR"
+            ]
+          },
+          "field": {
+            "type": "string"
+          },
+          "issues": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ValidationIssue"
+            }
+          }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "required": ["success", "status", "message", "error"],
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "enum": [false]
+          },
+          "status": {
+            "type": "integer"
+          },
+          "message": {
+            "type": "string"
+          },
+          "error": {
+            "$ref": "#/components/schemas/ErrorPayload"
+          }
+        }
+      },
+      "CustomerSyncSuccessResponse": {
+        "type": "object",
+        "required": ["success", "status", "message", "data"],
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "enum": [true]
+          },
+          "status": {
+            "type": "integer",
+            "example": 200
+          },
+          "message": {
+            "type": "string",
+            "example": "User synced successfully"
+          },
+          "data": {
+            "$ref": "#/components/schemas/Customer"
+          }
+        }
+      }
+    }
+  }
+}

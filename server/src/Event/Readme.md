@@ -1,6 +1,7 @@
 # Event-Driven Architecture (Server)
 
 This module implements an event-driven pipeline using:
+
 1. Domain Events for business intent.
 2. Transactional Event Store + Outbox for reliability.
 3. BullMQ (Redis-backed) Event Bus for async delivery.
@@ -11,6 +12,7 @@ The current delivery model is at-least-once.
 ## Why this architecture exists
 
 The design solves two common problems in distributed/business workflows:
+
 1. Consistency: event creation and staging are committed in one database transaction.
 2. Reliability: if Redis or consumers are temporarily unavailable, events remain in outbox and can be retried.
 
@@ -33,6 +35,7 @@ The event runtime is initialized once at server startup and shut down gracefully
 - Listener registration at boot: [src/Event/registerListeners.ts](registerListeners.ts)
 
 Initialization includes:
+
 1. Create BullMQ Queue domain-events.
 2. Create ListenerRegistry and register listeners.
 3. Create RedisEventBus.
@@ -41,6 +44,7 @@ Initialization includes:
 6. Start background outbox poller.
 
 Shutdown includes:
+
 1. Stop outbox polling interval.
 2. Close BullMQ Worker.
 3. Close BullMQ Queue connection.
@@ -52,6 +56,7 @@ Shutdown includes:
 - File: [src/Event/DomainEvents/DomainEvent.ts](DomainEvents/DomainEvent.ts)
 - Purpose: typed event envelope for business events.
 - Key fields:
+
 1. eventId: UUID for event identity.
 2. eventType: canonical routing key (example: kyc.completed).
 3. aggregateId, tenantId: business partitioning.
@@ -60,6 +65,7 @@ Shutdown includes:
 6. payload, metadata: event data.
 
 Concrete example:
+
 - [src/Event/DomainEvents/KYCCompletedEvent.ts](DomainEvents/KYCCompletedEvent.ts)
 
 ## 2) EventManager (transactional staging)
@@ -68,12 +74,14 @@ Concrete example:
 - Responsibility: write into event_store and outbox atomically.
 
 Behavior:
+
 1. Stores canonical eventType from event.eventType.
 2. Persists structured payload/metadata as JSONB.
 3. Inserts event_store row first, captures created id.
 4. Inserts outbox row referencing event_store.id through outbox.event_id.
 
 Why this matters:
+
 1. Prevents lost events when app crashes after DB write but before bus publish.
 2. Keeps event history (event_store) separate from delivery state (outbox).
 
@@ -82,16 +90,19 @@ Why this matters:
 - File: [src/Event/Repository/schema.ts](Repository/schema.ts)
 
 Tables:
+
 1. event_store
 2. outbox
 
 Important columns in outbox:
+
 1. processed: delivery state flag.
 2. retries: retry count.
 3. processed_at: terminal/success timestamp.
 4. event_id: FK to event_store.id.
 
 State values for processed currently used by code:
+
 1. 0 = pending
 2. 2 = claimed/in-flight by poller
 3. 1 = published successfully
@@ -102,6 +113,7 @@ State values for processed currently used by code:
 - File: [src/Event/Repository/Outbox.ts](Repository/Outbox.ts)
 
 Key methods:
+
 1. claimUnprocessedEntries(limit, maxRetries): claims pending rows by setting processed to 2.
 2. markAsProcessed(id): sets processed to 1 and processed_at timestamp.
 3. incrementRetry(id): increments retries.
@@ -115,6 +127,7 @@ This claim model reduces duplicate publication when multiple pollers exist.
 - File: [src/Event/OutBoxPublisher.ts](OutBoxPublisher.ts)
 
 Behavior:
+
 1. Polls claimed rows (batch size 100).
 2. Builds EventBusMessage and publishes to EventBus.
 3. On success, marks outbox row processed.
@@ -127,11 +140,13 @@ Behavior:
 - File: [src/Event/EventBus/EventBus.ts](EventBus/EventBus.ts)
 
 Responsibilities:
+
 1. publish(message): enqueue job in BullMQ queue named by eventType.
 2. subscribe(handler): create a single Worker instance and dispatch job.data.
 3. close(): close worker and queue connections.
 
 Current job options:
+
 1. attempts: 5
 2. removeOnComplete: false (keeps completed jobs for diagnostics/replay analysis)
 
@@ -141,16 +156,19 @@ Current job options:
 - Processor: [src/Event/EventProcessor/EventProcessor.ts](EventProcessor/EventProcessor.ts)
 
 Pattern:
+
 1. Listeners are registered once at startup.
 2. Processor resolves handlers by message.eventType.
 3. Each handler executes with try/catch isolation.
 
 Example listener:
+
 - [src/Event/Listeners/KycCompletedNotificationListener.ts](Listeners/KycCompletedNotificationListener.ts)
 
 ## Configuration
 
 The runtime reads these environment variables:
+
 1. REDIS_HOST (default 127.0.0.1)
 2. REDIS_PORT (default 6379)
 3. OUTBOX_MAX_RETRIES (default 5)
@@ -159,11 +177,13 @@ The runtime reads these environment variables:
 ## Reliability guarantees (current)
 
 What is guaranteed:
+
 1. Atomic event staging to event_store + outbox.
 2. Retry-based outbox dispatch.
 3. At-least-once delivery semantics.
 
 What is not guaranteed:
+
 1. Exactly-once processing.
 2. Global ordering across all event types/aggregates.
 3. Automatic dead-letter recovery workflow (state exists, workflow manual).
@@ -179,15 +199,19 @@ Listener implementations must be idempotent.
 ## How to trigger a sample event
 
 For development testing, a route exists:
+
 - [src/Event/testRoute.ts](testRoute.ts)
 
 Mounted path in app:
+
 - [src/app.ts](../app.ts)
 
 Trigger endpoint:
+
 1. GET /event/trigger_event
 
 This should:
+
 1. Create event_store row.
 2. Create linked outbox row.
 3. Publish to queue by poller.

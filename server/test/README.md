@@ -27,26 +27,31 @@ test/
 ## Running Tests
 
 ### Run all tests
+
 ```bash
 pnpm test
 ```
 
 ### Run tests in watch mode
+
 ```bash
 pnpm test:watch
 ```
 
 ### Run tests with coverage
+
 ```bash
 pnpm test:coverage
 ```
 
 ### Run specific test file
+
 ```bash
 pnpm test security.test.ts
 ```
 
 ### Run tests matching a pattern
+
 ```bash
 pnpm test --testNamePattern="should create"
 ```
@@ -88,12 +93,12 @@ describe('Feature/Module Name', () => {
 The `testHelpers.ts` file provides utility functions for common testing tasks:
 
 ```typescript
-import { 
-  randomString, 
-  randomEmail, 
+import {
+  randomString,
+  randomEmail,
   generateStrongPassword,
   createTestTenant,
-  withEnv 
+  withEnv,
 } from '../helpers/testHelpers';
 
 // Generate random test data
@@ -114,11 +119,11 @@ await withEnvAsync({ NODE_ENV: 'test' }, async () => {
 The `testData.ts` file contains pre-defined test data:
 
 ```typescript
-import { 
-  validPasswords, 
+import {
+  validPasswords,
   invalidPasswords,
   sampleTenants,
-  errorMessages 
+  errorMessages,
 } from '../fixtures/testData';
 
 // Use sample data in tests
@@ -195,7 +200,7 @@ describe('Controller Test', () => {
   beforeEach(() => {
     mockJson = jest.fn();
     mockStatus = jest.fn().mockReturnValue({ json: mockJson });
-    
+
     mockRequest = { body: {} };
     mockResponse = {
       status: mockStatus,
@@ -208,18 +213,23 @@ describe('Controller Test', () => {
   it('should handle request', async () => {
     // Mock service method
     const mockMethod = jest.fn().mockResolvedValue({ data: 'test' });
-    (AuthService as jest.MockedClass<typeof AuthService>).mockImplementation(() => ({
-      method: mockMethod,
-    } as any));
+    (AuthService as jest.MockedClass<typeof AuthService>).mockImplementation(
+      () =>
+        ({
+          method: mockMethod,
+        }) as any
+    );
 
     // Test controller
     await controller(mockRequest as Request, mockResponse as Response);
 
     // Verify response
     expect(mockStatus).toHaveBeenCalledWith(200);
-    expect(mockJson).toHaveBeenCalledWith(expect.objectContaining({
-      success: true,
-    }));
+    expect(mockJson).toHaveBeenCalledWith(
+      expect.objectContaining({
+        success: true,
+      })
+    );
   });
 });
 ```
@@ -227,6 +237,7 @@ describe('Controller Test', () => {
 ## Testing Best Practices
 
 ### 1. Test Isolation
+
 Each test should be independent and not rely on other tests:
 
 ```typescript
@@ -236,6 +247,7 @@ beforeEach(() => {
 ```
 
 ### 2. Descriptive Test Names
+
 Use clear, descriptive names that explain what is being tested:
 
 ```typescript
@@ -245,35 +257,46 @@ it('should throw error when updating non-existent tenant', async () => {
 ```
 
 ### 3. Arrange-Act-Assert Pattern
+
 Structure tests with clear sections:
 
 ```typescript
 it('should update tenant name', async () => {
   // Arrange
   const tenant = await repository.createTenant(data);
-  
+
   // Act
-  const updated = await repository.updateTenant(tenant.id, { name: 'New Name' });
-  
+  const updated = await repository.updateTenant(tenant.id, {
+    name: 'New Name',
+  });
+
   // Assert
   expect(updated.name).toBe('New Name');
 });
 ```
 
 ### 4. Test Edge Cases
+
 Don't just test the happy path:
 
 ```typescript
 describe('getTenantByEmail', () => {
-  it('should return tenant when email exists', async () => { /* ... */ });
-  
-  it('should return null when email does not exist', async () => { /* ... */ });
-  
-  it('should perform case-sensitive matching', async () => { /* ... */ });
+  it('should return tenant when email exists', async () => {
+    /* ... */
+  });
+
+  it('should return null when email does not exist', async () => {
+    /* ... */
+  });
+
+  it('should perform case-sensitive matching', async () => {
+    /* ... */
+  });
 });
 ```
 
 ### 5. Async/Await
+
 Use async/await for cleaner asynchronous tests:
 
 ```typescript
@@ -306,7 +329,9 @@ open coverage/lcov-report/index.html
 ## Testing Utilities
 
 ### Security Utils Tests
+
 Located in `test/unit/security.test.ts`, covers:
+
 - Password hashing with salt generation
 - Password comparison
 - API key generation (uniqueness, URL-safe)
@@ -314,7 +339,9 @@ Located in `test/unit/security.test.ts`, covers:
 - JWT token generation and verification
 
 ### AuthService Tests
+
 Located in `test/unit/services/authService.test.ts`, covers:
+
 - **registerTenant**: New tenant registration with password hashing, JWT generation, duplicate email checks, status validation
 - **loginTenant**: Authentication with credential verification, account status checks, JWT token generation
 - **sanitizeTenantResponse**: Removing sensitive fields (password, salt) from responses
@@ -325,7 +352,9 @@ Located in `test/unit/services/authService.test.ts`, covers:
 ### Controller Tests
 
 #### Register Controller
+
 Located in `test/unit/controllers/registerController.test.ts`, covers:
+
 - HTTP 201 response with tenant data and JWT token
 - Proper request/response handling
 - Error scenarios: duplicate tenants (409), general errors (500)
@@ -336,7 +365,9 @@ Located in `test/unit/controllers/registerController.test.ts`, covers:
 **Test Coverage:** 15+ test cases for HTTP layer testing
 
 #### Login Controller
+
 Located in `test/unit/controllers/loginController.test.ts`, covers:
+
 - HTTP 200 response for successful authentication
 - HTTP 401 for invalid credentials
 - HTTP 403 for inactive/suspended accounts
@@ -348,13 +379,16 @@ Located in `test/unit/controllers/loginController.test.ts`, covers:
 **Test Coverage:** 20+ test cases for authentication flow testing
 
 ### Repository Tests
+
 - Password comparison
 - API key generation (uniqueness, URL-safe)
 - API key hashing (bcrypt format)
 - JWT token generation and verification
 
 ### Repository Tests
+
 Located in `test/unit/repositories/`, covers:
+
 - CRUD operations (Create, Read, Update)
 - Edge cases (not found, duplicates)
 - Data consistency across operations
@@ -364,15 +398,19 @@ Located in `test/unit/repositories/`, covers:
 ## Common Issues
 
 ### Issue: Tests fail with module not found
+
 **Solution**: Ensure `tsconfig.json` includes test files and paths are correct.
 
 ### Issue: Mock doesn't implement interface
+
 **Solution**: Verify mock class implements all required interface methods with correct signatures.
 
 ### Issue: Async tests timeout
+
 **Solution**: Ensure all async operations use `await` and promises resolve/reject properly.
 
 ### Issue: Coverage below threshold
+
 **Solution**: Add more test cases to cover untested branches and lines.
 
 ## Adding New Tests

@@ -1,17 +1,20 @@
 # Tenant Module Documentation
 
 ## Overview
+
 The **Tenant Module** provides authentication and authorization for tenant administrators in a multi-tenant SaaS application. It implements JWT-based authentication, secure password hashing, and comprehensive API key management with support for key rotation, expiration, and revocation.
 
 ## Architecture
 
 ### Design Principles
+
 - **Scalability**: Stateless JWT authentication, dependency injection, clean separation of concerns
 - **Security**: Bcrypt password hashing with salt, JWT token-based auth, encrypted API keys, hashed key storage, sanitized responses
 - **Performance**: Optimized database queries, indexed lookups, minimal middleware overhead
 - **Extensibility**: API key management with rotation support, RBAC-ready, tenant-level permissions, webhook events
 
 ### Module Structure
+
 ```
 tenant/
 ├── schema.ts              # Drizzle ORM table definitions (tenants, api_keys, webhooks)
@@ -35,9 +38,11 @@ tenant/
 ## Features
 
 ### 1. Tenant Registration
+
 **Endpoint**: `POST /tenant/register`
 
 **Request Body**:
+
 ```json
 {
   "name": "Acme Corporation",
@@ -47,6 +52,7 @@ tenant/
 ```
 
 **Response** (201 Created):
+
 ```json
 {
   "success": true,
@@ -70,11 +76,13 @@ tenant/
 ```
 
 **Validation Rules**:
+
 - `name`: 3-255 characters, trimmed
 - `email`: Valid email format, max 255 characters, unique
 - `password`: 8-100 characters, must contain uppercase, number, and special character (!@#$%^&*)
 
 **Error Responses**:
+
 - `409 Conflict`: Tenant already exists with this email
 - `400 Bad Request`: Validation errors
 - `500 Internal Server Error`: Server-side errors
@@ -82,9 +90,11 @@ tenant/
 ---
 
 ### 2. Tenant Login
+
 **Endpoint**: `POST /tenant/login`
 
 **Request Body**:
+
 ```json
 {
   "email": "admin@acme.com",
@@ -93,6 +103,7 @@ tenant/
 ```
 
 **Response** (200 OK):
+
 ```json
 {
   "success": true,
@@ -116,6 +127,7 @@ tenant/
 ```
 
 **Error Responses**:
+
 - `401 Unauthorized`: Invalid email or password
 - `403 Forbidden`: Tenant account is suspended or inactive
 - `500 Internal Server Error`: Server-side errors
@@ -123,11 +135,13 @@ tenant/
 ---
 
 ### 3. Create API Key
+
 **Endpoint**: `POST /tenant/api-keys`
 
 **Authentication**: Required (Bearer token)
 
 **Request Body**:
+
 ```json
 {
   "kid": "my-production-key",
@@ -136,6 +150,7 @@ tenant/
 ```
 
 **Response** (201 Created):
+
 ```json
 {
   "success": true,
@@ -157,10 +172,12 @@ tenant/
 ```
 
 **Parameters**:
+
 - `kid`: (required) Key identifier/prefix, max 128 characters
 - `expires_at`: (optional) ISO timestamp for key expiration
 
 **Error Responses**:
+
 - `400 Bad Request`: Validation errors
 - `401 Unauthorized`: Authentication required
 - `409 Conflict`: Key already exists
@@ -168,15 +185,18 @@ tenant/
 ---
 
 ### 4. List API Keys
+
 **Endpoint**: `GET /tenant/api-keys?limit=50&offset=0`
 
 **Authentication**: Required (Bearer token)
 
 **Query Parameters**:
+
 - `limit`: (optional) Max 100, default 50
 - `offset`: (optional) Default 0
 
 **Response** (200 OK):
+
 ```json
 {
   "success": true,
@@ -206,11 +226,13 @@ tenant/
 ---
 
 ### 5. Change API Key Status
+
 **Endpoint**: `PATCH /tenant/api-keys`
 
 **Authentication**: Required (Bearer token)
 
 **Request Body**:
+
 ```json
 {
   "kid": "my-production-key",
@@ -219,6 +241,7 @@ tenant/
 ```
 
 **Response** (200 OK):
+
 ```json
 {
   "success": true,
@@ -227,14 +250,17 @@ tenant/
 ```
 
 **Parameters**:
+
 - `kid`: (required) Key identifier to modify
 - `status`: (required) Either `"inactive"` or `"revoked"`
 
 **Status Meanings**:
+
 - `inactive`: Temporarily disable key (can be reactivated)
 - `revoked`: Permanently revoke key with timestamp (cannot be reactivated)
 
 **Error Responses**:
+
 - `400 Bad Request`: Validation errors or invalid status
 - `401 Unauthorized`: Authentication required
 - `403 Forbidden`: Key doesn't belong to authenticated tenant
@@ -243,11 +269,13 @@ tenant/
 ---
 
 ### 6. Remove API Key
+
 **Endpoint**: `DELETE /tenant/api-keys`
 
 **Authentication**: Required (Bearer token)
 
 **Request Body**:
+
 ```json
 {
   "kid": "my-production-key"
@@ -255,6 +283,7 @@ tenant/
 ```
 
 **Response** (200 OK):
+
 ```json
 {
   "success": true,
@@ -263,11 +292,13 @@ tenant/
 ```
 
 **Parameters**:
+
 - `kid`: (required) Key identifier to remove
 
 **Note**: This permanently deletes the key record from the database.
 
 **Error Responses**:
+
 - `400 Bad Request`: Validation errors
 - `401 Unauthorized`: Authentication required
 - `403 Forbidden`: Key doesn't belong to authenticated tenant
@@ -276,11 +307,13 @@ tenant/
 ---
 
 ### 7. Create Webhook
+
 **Endpoint**: `POST /tenant/webhooks`
 
 **Authentication**: Required (Bearer token)
 
 **Request Body**:
+
 ```json
 {
   "url": "https://example.com/webhooks/tenant",
@@ -289,6 +322,7 @@ tenant/
 ```
 
 **Response** (201 Created):
+
 ```json
 {
   "success": true,
@@ -305,16 +339,19 @@ tenant/
 ```
 
 **Parameters**:
+
 - `url`: (required) Valid HTTPS URL for webhook delivery, max 2048 characters
 - `events`: (optional) Array of event types to subscribe to
 
 **Supported Events**:
+
 - `api_key.created` - Triggered when an API key is created
 - `api_key.deactivated` - Triggered when an API key is deactivated
 - `api_key.revoked` - Triggered when an API key is revoked
 - `tenant.updated` - Triggered when tenant information is updated
 
 **Error Responses**:
+
 - `400 Bad Request`: Validation errors or invalid URL
 - `401 Unauthorized`: Authentication required
 - `409 Conflict`: Webhook already exists
@@ -322,15 +359,18 @@ tenant/
 ---
 
 ### 8. List Webhooks
+
 **Endpoint**: `GET /tenant/webhooks?limit=50&offset=0`
 
 **Authentication**: Required (Bearer token)
 
 **Query Parameters**:
+
 - `limit`: (optional) Max 100, default 50
 - `offset`: (optional) Default 0
 
 **Response** (200 OK):
+
 ```json
 {
   "success": true,
@@ -356,17 +396,20 @@ tenant/
 **Note**: Webhook secrets are never returned for security reasons.
 
 **Error Responses**:
+
 - `400 Bad Request`: Invalid query parameters
 - `401 Unauthorized`: Authentication required
 
 ---
 
 ### 9. Delete Webhook
+
 **Endpoint**: `DELETE /tenant/webhooks/:id`
 
 **Authentication**: Required (Bearer token)
 
 **Response** (200 OK):
+
 ```json
 {
   "success": true,
@@ -375,9 +418,11 @@ tenant/
 ```
 
 **Parameters**:
+
 - `id`: (required) Webhook ID to delete (URL parameter)
 
 **Error Responses**:
+
 - `400 Bad Request`: Invalid webhook ID
 - `401 Unauthorized`: Authentication required
 - `404 Not Found`: Webhook not found or doesn't belong to tenant
@@ -385,6 +430,7 @@ tenant/
 ---
 
 ### Tenants Table
+
 ```sql
 CREATE TABLE tenants (
     id SERIAL PRIMARY KEY,
@@ -401,6 +447,7 @@ CREATE TYPE tenant_status AS ENUM ('active', 'inactive', 'suspended');
 ```
 
 ### API Keys Table
+
 ```sql
 CREATE TABLE tenants_api_keys (
     id SERIAL PRIMARY KEY,
@@ -422,6 +469,7 @@ CREATE INDEX ix_tenantapikey_tenant ON tenants_api_keys(tenant_id);
 ```
 
 ### Webhooks Table (Future Implementation)
+
 ```sql
 CREATE TABLE webhooks (
     id SERIAL PRIMARY KEY,
@@ -439,11 +487,13 @@ CREATE TABLE webhooks (
 ## Security Features
 
 ### Password Security
+
 - **Hashing**: Bcrypt with auto-generated salt (cost factor: 10)
 - **Storage**: Never store plaintext passwords
 - **Validation**: Strong password requirements enforced
 
 ### API Key Security
+
 - **Encryption**: AES-256-CBC encryption for stored keys
 - **Hashing**: Bcrypt hashing of key material for validation
 - **Key Prefix**: Public identifier without exposing the actual key
@@ -452,12 +502,14 @@ CREATE TABLE webhooks (
 - **Revocation Tracking**: Records when keys are revoked
 
 ### JWT Tokens
+
 - **Algorithm**: HS256 (HMAC with SHA-256)
 - **Expiration**: 1 hour (configurable)
 - **Payload**: `{ id, email }`
 - **Secret**: Stored in environment variable `ACCESS_TOKEN_SECRET`
 
 ### Response Sanitization
+
 - Passwords and salts are never included in API responses
 - API key hashes are never returned to clients
 - Only public tenant fields are returned
@@ -470,6 +522,7 @@ CREATE TABLE webhooks (
 All API responses follow a consistent format:
 
 ### Success Response
+
 ```json
 {
   "success": true,
@@ -479,6 +532,7 @@ All API responses follow a consistent format:
 ```
 
 ### Error Response
+
 ```json
 {
   "success": false,
@@ -492,6 +546,7 @@ All API responses follow a consistent format:
 ## API Usage Examples
 
 ### Register and Login Flow
+
 ```typescript
 // 1. Register new tenant
 const registerResponse = await fetch('http://localhost:3000/tenant/register', {
@@ -500,8 +555,8 @@ const registerResponse = await fetch('http://localhost:3000/tenant/register', {
   body: JSON.stringify({
     name: 'Acme Corp',
     email: 'admin@acme.com',
-    password: 'SecurePass123!'
-  })
+    password: 'SecurePass123!',
+  }),
 });
 
 const { data } = await registerResponse.json();
@@ -512,35 +567,38 @@ const createKeyResponse = await fetch('http://localhost:3000/tenant/api-keys', {
   method: 'POST',
   headers: {
     'Content-Type': 'application/json',
-    'Authorization': `Bearer ${accessToken}`
+    Authorization: `Bearer ${accessToken}`,
   },
   body: JSON.stringify({
     kid: 'prod-key-1',
-    expires_at: '2026-12-31T23:59:59Z'
-  })
+    expires_at: '2026-12-31T23:59:59Z',
+  }),
 });
 
 const { data: keyData } = await createKeyResponse.json();
-const apiKey = keyData.api_key;  // One-time reveal
+const apiKey = keyData.api_key; // One-time reveal
 
 // 3. List API keys
-const listResponse = await fetch('http://localhost:3000/tenant/api-keys?limit=10&offset=0', {
-  headers: {
-    'Authorization': `Bearer ${accessToken}`
+const listResponse = await fetch(
+  'http://localhost:3000/tenant/api-keys?limit=10&offset=0',
+  {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
   }
-});
+);
 
 // 4. Change key status
 const statusResponse = await fetch('http://localhost:3000/tenant/api-keys', {
   method: 'PATCH',
   headers: {
     'Content-Type': 'application/json',
-    'Authorization': `Bearer ${accessToken}`
+    Authorization: `Bearer ${accessToken}`,
   },
   body: JSON.stringify({
     kid: 'prod-key-1',
-    status: 'inactive'
-  })
+    status: 'inactive',
+  }),
 });
 
 // 5. Remove API key
@@ -548,40 +606,49 @@ const removeResponse = await fetch('http://localhost:3000/tenant/api-keys', {
   method: 'DELETE',
   headers: {
     'Content-Type': 'application/json',
-    'Authorization': `Bearer ${accessToken}`
+    Authorization: `Bearer ${accessToken}`,
   },
   body: JSON.stringify({
-    kid: 'prod-key-1'
-  })
+    kid: 'prod-key-1',
+  }),
 });
 
 // 6. Create webhook subscription
-const createWebhookResponse = await fetch('http://localhost:3000/tenant/webhooks', {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json',
-    'Authorization': `Bearer ${accessToken}`
-  },
-  body: JSON.stringify({
-    url: 'https://example.com/webhooks/tenant',
-    events: ['api_key.created', 'api_key.deactivated']
-  })
-});
+const createWebhookResponse = await fetch(
+  'http://localhost:3000/tenant/webhooks',
+  {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify({
+      url: 'https://example.com/webhooks/tenant',
+      events: ['api_key.created', 'api_key.deactivated'],
+    }),
+  }
+);
 
 // 7. List webhooks
-const listWebhooksResponse = await fetch('http://localhost:3000/tenant/webhooks?limit=10', {
-  headers: {
-    'Authorization': `Bearer ${accessToken}`
+const listWebhooksResponse = await fetch(
+  'http://localhost:3000/tenant/webhooks?limit=10',
+  {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
   }
-});
+);
 
 // 8. Delete webhook
-const deleteWebhookResponse = await fetch('http://localhost:3000/tenant/webhooks/1', {
-  method: 'DELETE',
-  headers: {
-    'Authorization': `Bearer ${accessToken}`
+const deleteWebhookResponse = await fetch(
+  'http://localhost:3000/tenant/webhooks/1',
+  {
+    method: 'DELETE',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
   }
-});
+);
 ```
 
 ---
@@ -589,6 +656,7 @@ const deleteWebhookResponse = await fetch('http://localhost:3000/tenant/webhooks
 ## Environment Variables
 
 Required environment variables:
+
 ```env
 DATABASE_URL=postgresql://user:password@localhost:5432/db_name
 ACCESS_TOKEN_SECRET=your_secret_key_here_min_32_chars
@@ -629,23 +697,27 @@ await service.listApiKeys(tenantId, { limit: 50, offset: 0 });
 ## Future Enhancements
 
 ### ✅ Webhook Management (Endpoints Implemented)
+
 - ✅ **POST /tenant/webhooks**: Subscribe to events
 - ✅ **GET /tenant/webhooks**: List subscriptions
 - ✅ **DELETE /tenant/webhooks/:id**: Remove subscription
 - ✅ **Events**: api_key.created, api_key.deactivated, api_key.revoked, tenant.updated
 
 **Remaining Webhook Work**:
+
 - Implement actual webhook delivery mechanism
 - Add payload signing with HMAC-SHA256
 - Add retry logic for failed deliveries
 - Track webhook delivery status
 
 ### Key Rotation
+
 - Automatic rotation with grace period
 - Seamless migration between keys
 - Usage tracking via `rotated_from_key_id`
 
 ### Features to Implement
+
 - Usage analytics and tracking
 - Rate limiting per API key
 - RBAC scopes and permissions
@@ -658,6 +730,7 @@ await service.listApiKeys(tenantId, { limit: 50, offset: 0 });
 ## Error Handling
 
 ### HTTP Status Codes
+
 - `200 OK`: Successful request
 - `201 Created`: Resource created successfully
 - `400 Bad Request`: Validation error or invalid input
@@ -668,6 +741,7 @@ await service.listApiKeys(tenantId, { limit: 50, offset: 0 });
 - `500 Internal Server Error`: Server-side error
 
 ### Error Response Format
+
 All error responses follow this standardized format:
 
 ```json
@@ -684,57 +758,64 @@ All error responses follow this standardized format:
 ### Error Codes
 
 #### Authentication Errors (4xx)
-| Code | HTTP | Description |
-|------|------|-------------|
-| `ERR_401_AUTH_REQUIRED` | 401 | Authentication token required |
-| `ERR_401_INVALID_TOKEN` | 401 | Invalid or malformed JWT token |
-| `ERR_401_TOKEN_EXPIRED` | 401 | Token has expired |
+
+| Code                    | HTTP | Description                    |
+| ----------------------- | ---- | ------------------------------ |
+| `ERR_401_AUTH_REQUIRED` | 401  | Authentication token required  |
+| `ERR_401_INVALID_TOKEN` | 401  | Invalid or malformed JWT token |
+| `ERR_401_TOKEN_EXPIRED` | 401  | Token has expired              |
 
 #### Validation Errors (4xx)
-| Code | HTTP | Description |
-|------|------|-------------|
-| `ERR_400_VALIDATION_ERROR` | 400 | Input validation failed |
-| `ERR_400_INVALID_EMAIL` | 400 | Invalid email address format |
-| `ERR_400_INVALID_PASSWORD` | 400 | Password does not meet requirements |
-| `ERR_400_INVALID_URL` | 400 | Invalid HTTPS URL |
-| `ERR_400_INVALID_TIMESTAMP` | 400 | Invalid ISO 8601 timestamp format |
-| `ERR_400_INVALID_ID` | 400 | Invalid numeric ID |
-| `ERR_400_MISSING_FIELD` | 400 | Required field is missing |
+
+| Code                        | HTTP | Description                         |
+| --------------------------- | ---- | ----------------------------------- |
+| `ERR_400_VALIDATION_ERROR`  | 400  | Input validation failed             |
+| `ERR_400_INVALID_EMAIL`     | 400  | Invalid email address format        |
+| `ERR_400_INVALID_PASSWORD`  | 400  | Password does not meet requirements |
+| `ERR_400_INVALID_URL`       | 400  | Invalid HTTPS URL                   |
+| `ERR_400_INVALID_TIMESTAMP` | 400  | Invalid ISO 8601 timestamp format   |
+| `ERR_400_INVALID_ID`        | 400  | Invalid numeric ID                  |
+| `ERR_400_MISSING_FIELD`     | 400  | Required field is missing           |
 
 #### Authorization Errors (4xx)
-| Code | HTTP | Description |
-|------|------|-------------|
-| `ERR_403_FORBIDDEN` | 403 | Access denied |
-| `ERR_403_INSUFFICIENT_PERMISSIONS` | 403 | Insufficient permissions |
-| `ERR_403_KEY_DOES_NOT_BELONG` | 403 | Key does not belong to tenant |
+
+| Code                               | HTTP | Description                   |
+| ---------------------------------- | ---- | ----------------------------- |
+| `ERR_403_FORBIDDEN`                | 403  | Access denied                 |
+| `ERR_403_INSUFFICIENT_PERMISSIONS` | 403  | Insufficient permissions      |
+| `ERR_403_KEY_DOES_NOT_BELONG`      | 403  | Key does not belong to tenant |
 
 #### Not Found Errors (4xx)
-| Code | HTTP | Description |
-|------|------|-------------|
-| `ERR_404_NOT_FOUND` | 404 | Generic resource not found |
-| `ERR_404_TENANT_NOT_FOUND` | 404 | Tenant does not exist |
-| `ERR_404_API_KEY_NOT_FOUND` | 404 | API key does not exist |
-| `ERR_404_WEBHOOK_NOT_FOUND` | 404 | Webhook does not exist |
+
+| Code                        | HTTP | Description                |
+| --------------------------- | ---- | -------------------------- |
+| `ERR_404_NOT_FOUND`         | 404  | Generic resource not found |
+| `ERR_404_TENANT_NOT_FOUND`  | 404  | Tenant does not exist      |
+| `ERR_404_API_KEY_NOT_FOUND` | 404  | API key does not exist     |
+| `ERR_404_WEBHOOK_NOT_FOUND` | 404  | Webhook does not exist     |
 
 #### Conflict Errors (4xx)
-| Code | HTTP | Description |
-|------|------|-------------|
-| `ERR_409_CONFLICT` | 409 | Resource conflict |
-| `ERR_409_TENANT_EXISTS` | 409 | Tenant already exists |
-| `ERR_409_KEY_EXISTS` | 409 | API key already exists |
-| `ERR_409_WEBHOOK_EXISTS` | 409 | Webhook already exists |
-| `ERR_409_DUPLICATE_EMAIL` | 409 | Email already registered |
+
+| Code                      | HTTP | Description              |
+| ------------------------- | ---- | ------------------------ |
+| `ERR_409_CONFLICT`        | 409  | Resource conflict        |
+| `ERR_409_TENANT_EXISTS`   | 409  | Tenant already exists    |
+| `ERR_409_KEY_EXISTS`      | 409  | API key already exists   |
+| `ERR_409_WEBHOOK_EXISTS`  | 409  | Webhook already exists   |
+| `ERR_409_DUPLICATE_EMAIL` | 409  | Email already registered |
 
 #### Server Errors (5xx)
-| Code | HTTP | Description |
-|------|------|-------------|
-| `ERR_500_INTERNAL_ERROR` | 500 | Internal server error |
-| `ERR_500_DATABASE_ERROR` | 500 | Database operation failed |
-| `ERR_500_ENCRYPTION_ERROR` | 500 | Key encryption/decryption failed |
+
+| Code                       | HTTP | Description                      |
+| -------------------------- | ---- | -------------------------------- |
+| `ERR_500_INTERNAL_ERROR`   | 500  | Internal server error            |
+| `ERR_500_DATABASE_ERROR`   | 500  | Database operation failed        |
+| `ERR_500_ENCRYPTION_ERROR` | 500  | Key encryption/decryption failed |
 
 ### Validation Rules
 
 #### Password Requirements
+
 - Minimum 8 characters
 - Maximum 100 characters
 - At least one uppercase letter
@@ -744,11 +825,13 @@ All error responses follow this standardized format:
 Example valid password: `SecurePass123!`
 
 #### Email
+
 - Must be valid email format
 - Maximum 255 characters
 - Must be unique per tenant
 
 #### API Key ID (kid)
+
 - Minimum 1 character
 - Maximum 128 characters
 - Only alphanumeric characters, hyphens, and underscores allowed
@@ -757,22 +840,26 @@ Example valid password: `SecurePass123!`
 Example: `prod-api-key-v1`
 
 #### Webhook URL
+
 - Must be valid HTTPS URL (SSL/TLS required)
 - Maximum 2048 characters
 - Must be reachable and return 200 status
 
 #### Expiration Timestamp
+
 - Must be valid ISO 8601 format
 - Must be in the future
 - Examples: `2026-12-31T23:59:59Z`, `2026-01-15T10:30:00Z`
 
 #### Query Parameters
+
 - `limit`: 1-100 (default 50)
 - `offset`: 0+ (default 0)
 
 ### Example Error Responses
 
 **Validation Error:**
+
 ```json
 {
   "success": false,
@@ -780,12 +867,15 @@ Example: `prod-api-key-v1`
   "code": "ERR_400_VALIDATION_ERROR",
   "errors": {
     "email": ["Invalid email address format"],
-    "password": ["Password must contain at least one special character (!@#$%^&*)"]
+    "password": [
+      "Password must contain at least one special character (!@#$%^&*)"
+    ]
   }
 }
 ```
 
 **Authentication Error:**
+
 ```json
 {
   "success": false,
@@ -795,6 +885,7 @@ Example: `prod-api-key-v1`
 ```
 
 **Conflict Error:**
+
 ```json
 {
   "success": false,
@@ -804,6 +895,7 @@ Example: `prod-api-key-v1`
 ```
 
 **Not Found Error:**
+
 ```json
 {
   "success": false,
@@ -817,6 +909,7 @@ Example: `prod-api-key-v1`
 ## Testing
 
 ### Unit Tests (To Implement)
+
 ```typescript
 describe('TenantApiServices', () => {
   it('should create API key with encryption', async () => {});
@@ -833,6 +926,7 @@ describe('TenantApiServices', () => {
 ## Contributing
 
 When adding features to the tenant module:
+
 1. Update schema definitions in `schema.ts`
 2. Add Zod validation schemas in `zodSchema.ts`
 3. Implement repository methods in `respository.ts`
@@ -846,4 +940,5 @@ When adding features to the tenant module:
 ---
 
 ## License
+
 Internal use only - Part of Compliance Automation System

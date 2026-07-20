@@ -1,12 +1,12 @@
-import { Request, Response, NextFunction } from "express";
-import jwt from "jsonwebtoken";
-import { JWTPayload } from "../../../utils/security";
-import { sendErrorResponse, ApiError } from "../../../utils/errorHandler";
-import { ErrorCode } from "../../../utils/APIContract";
+import { Request, Response, NextFunction } from 'express';
+import jwt from 'jsonwebtoken';
+import { JWTPayload } from '../../../utils/security';
+import { sendErrorResponse, ApiError } from '../../../utils/errorHandler';
+import { ErrorCode } from '../../../utils/APIContract';
 
 // extended Request interface to include authenticated tenant data
 export interface AuthenticatedRequest extends Request {
-    tenant?: JWTPayload;
+  tenant?: JWTPayload;
 }
 
 /**
@@ -14,49 +14,70 @@ export interface AuthenticatedRequest extends Request {
  * Validates Bearer token from Authorization header
  */
 export const authenticateTenant = async (
-    req: AuthenticatedRequest,
-    res: Response,
-    next: NextFunction
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
 ): Promise<void> => {
-    try {
-        // Extract token from Authorization header
-        
-        const token = req.headers.authorization?.split(" ")[1] || req.cookies?.token;
+  try {
+    // Extract token from Authorization header
 
-        // Get JWT secret from environment
-        const secretKey = process.env.ACCESS_TOKEN_SECRET;
+    const token =
+      req.headers.authorization?.split(' ')[1] || req.cookies?.token;
 
-        if (!secretKey) {
-            console.error("JWT secret key is not defined in environment variables");
-            sendErrorResponse(res, new ApiError(ErrorCode.INTERNAL_ERROR, "Server configuration error", 500));
-            return;
-        }
+    // Get JWT secret from environment
+    const secretKey = process.env.ACCESS_TOKEN_SECRET;
 
-        // Verify and decode token
-        const decoded = jwt.verify(token, secretKey) as JWTPayload;
-
-        // Attach tenant data to request for downstream handlers
-        req.tenant = decoded;
-
-        // Proceed to next middleware/handler
-        next();
-    } catch (error) {
-        // Handle specific JWT errors
-        if (error instanceof jwt.TokenExpiredError) {
-            sendErrorResponse(res, new ApiError(ErrorCode.TOKEN_EXPIRED, "Token has expired. Please login again", 401));
-            return;
-        }
-
-        console.error("JWT verification error:", error);
-
-        if (error instanceof jwt.JsonWebTokenError) {
-            sendErrorResponse(res, new ApiError(ErrorCode.INVALID_TOKEN, "Invalid or malformed token", 401));
-            return;
-        }
-
-        console.error("Error in authenticateTenant middleware:", error);
-        sendErrorResponse(res, new ApiError(ErrorCode.INTERNAL_ERROR, "Authentication error", 500));
+    if (!secretKey) {
+      console.error('JWT secret key is not defined in environment variables');
+      sendErrorResponse(
+        res,
+        new ApiError(
+          ErrorCode.INTERNAL_ERROR,
+          'Server configuration error',
+          500
+        )
+      );
+      return;
     }
+
+    // Verify and decode token
+    const decoded = jwt.verify(token, secretKey) as JWTPayload;
+
+    // Attach tenant data to request for downstream handlers
+    req.tenant = decoded;
+
+    // Proceed to next middleware/handler
+    next();
+  } catch (error) {
+    // Handle specific JWT errors
+    if (error instanceof jwt.TokenExpiredError) {
+      sendErrorResponse(
+        res,
+        new ApiError(
+          ErrorCode.TOKEN_EXPIRED,
+          'Token has expired. Please login again',
+          401
+        )
+      );
+      return;
+    }
+
+    console.error('JWT verification error:', error);
+
+    if (error instanceof jwt.JsonWebTokenError) {
+      sendErrorResponse(
+        res,
+        new ApiError(ErrorCode.INVALID_TOKEN, 'Invalid or malformed token', 401)
+      );
+      return;
+    }
+
+    console.error('Error in authenticateTenant middleware:', error);
+    sendErrorResponse(
+      res,
+      new ApiError(ErrorCode.INTERNAL_ERROR, 'Authentication error', 500)
+    );
+  }
 };
 
 /**
@@ -64,13 +85,16 @@ export const authenticateTenant = async (
  * Use after authenticateTenant middleware
  */
 export const requireActiveTenant = (
-    req: AuthenticatedRequest,
-    res: Response,
-    next: NextFunction
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
 ): void => {
-    if (!req.tenant) {
-        sendErrorResponse(res, new ApiError(ErrorCode.AUTH_REQUIRED, "Authentication required", 401));
-        return;
-    }
-    next();
+  if (!req.tenant) {
+    sendErrorResponse(
+      res,
+      new ApiError(ErrorCode.AUTH_REQUIRED, 'Authentication required', 401)
+    );
+    return;
+  }
+  next();
 };

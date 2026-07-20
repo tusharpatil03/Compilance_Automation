@@ -2,62 +2,75 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 
-export const hashPassword = (password: string, salt?: string): { hashedPassword: string, salt: string } => {
-    if (!salt) {
-        salt = bcrypt.genSaltSync(10);
-    }
-    const hashedPassword = bcrypt.hashSync(password, salt);
-    return { hashedPassword, salt: salt };
-}
+export const hashPassword = (
+  password: string,
+  salt?: string
+): { hashedPassword: string; salt: string } => {
+  if (!salt) {
+    salt = bcrypt.genSaltSync(10);
+  }
+  const hashedPassword = bcrypt.hashSync(password, salt);
+  return { hashedPassword, salt: salt };
+};
 
-export const comparePassword = (password: string, hashedPassword: string, salt: string): boolean => {
-    const hashToCompare = bcrypt.hashSync(password, salt);
-    return hashToCompare === hashedPassword;
-}
+export const comparePassword = (
+  password: string,
+  hashedPassword: string,
+  salt: string
+): boolean => {
+  const hashToCompare = bcrypt.hashSync(password, salt);
+  return hashToCompare === hashedPassword;
+};
 
 export const generateApiKey = (): string => {
-    const apiKey = crypto.randomBytes(32).toString('hex'); // 64 char hex string
-    return apiKey;
-}
+  const apiKey = crypto.randomBytes(32).toString('hex'); // 64 char hex string
+  return apiKey;
+};
 
 export const hashApiKey = (apiKey: string): string => {
-    const hashedApiKey = bcrypt.hashSync(apiKey);
-    return hashedApiKey;
-}
+  const hashedApiKey = bcrypt.hashSync(apiKey);
+  return hashedApiKey;
+};
 
-export const compareApiKeyHash = (apiKey:string, api_key_hash:string): Promise<boolean> =>{
-    return bcrypt.compare(apiKey, api_key_hash);
-}
+export const compareApiKeyHash = (
+  apiKey: string,
+  api_key_hash: string
+): Promise<boolean> => {
+  return bcrypt.compare(apiKey, api_key_hash);
+};
 
 export type JWTPayload = {
-    id: number;
-    email: string;
-}
+  id: number;
+  email: string;
+};
 
 export const generateJWTToken = (JWTPayload: JWTPayload): string => {
-    const secretKey = process.env.ACCESS_TOKEN_SECRET;
-    if (!secretKey) {
-        throw new Error("JWT secret key is not defined in environment variables");
-    }
-    const token = jwt.sign({
-        id: JWTPayload.id,
-        email: JWTPayload.email
+  const secretKey = process.env.ACCESS_TOKEN_SECRET;
+  if (!secretKey) {
+    throw new Error('JWT secret key is not defined in environment variables');
+  }
+  const token = jwt.sign(
+    {
+      id: JWTPayload.id,
+      email: JWTPayload.email,
     },
-        secretKey,
-        { expiresIn: "1h" }); // default 1 hour
-    return token;
-}
+    secretKey,
+    { expiresIn: '1h' }
+  ); // default 1 hour
+  return token;
+};
 
 // function to encrypt data using AES-256-CBC
 export const encryptData = (data: string): string => {
-    const secret = process.env.API_KEY_ENCRYPTION_SECRET ?? "default_encryption_secret";
-    // Derive a 32-byte key for AES-256-CBC regardless of secret length
-    const key = crypto.createHash("sha256").update(secret, "utf-8").digest();
-    const iv = crypto.randomBytes(16); // generate random initialization vector
+  const secret =
+    process.env.API_KEY_ENCRYPTION_SECRET ?? 'default_encryption_secret';
+  // Derive a 32-byte key for AES-256-CBC regardless of secret length
+  const key = crypto.createHash('sha256').update(secret, 'utf-8').digest();
+  const iv = crypto.randomBytes(16); // generate random initialization vector
 
-    const cipher = crypto.createCipheriv('aes-256-cbc', key, iv);
-    let encrypted = cipher.update(data, 'utf-8', 'hex');
-    encrypted += cipher.final('hex');
+  const cipher = crypto.createCipheriv('aes-256-cbc', key, iv);
+  let encrypted = cipher.update(data, 'utf-8', 'hex');
+  encrypted += cipher.final('hex');
 
-    return iv.toString('hex') + ':' + encrypted; // prepend IV for later use in decryption
-}
+  return iv.toString('hex') + ':' + encrypted; // prepend IV for later use in decryption
+};

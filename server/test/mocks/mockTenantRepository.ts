@@ -74,7 +74,7 @@ export class MockTenantRepository implements ITenantRepository {
 
   // Seed with initial data (helper for testing)
   seed(tenants: Tenant[]): void {
-    tenants.forEach(tenant => {
+    tenants.forEach((tenant) => {
       this.tenants.set(tenant.id, tenant);
       if (tenant.id >= this.nextId) {
         this.nextId = tenant.id + 1;

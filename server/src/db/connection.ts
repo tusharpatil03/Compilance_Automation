@@ -1,13 +1,15 @@
 import 'dotenv/config';
-import { drizzle, NodePgDatabase } from "drizzle-orm/node-postgres";
-import { Pool } from "pg";
-import schema from "./schema";
+import { drizzle, NodePgDatabase } from 'drizzle-orm/node-postgres';
+import { Pool } from 'pg';
+import schema from './schema';
 
 const pool = new Pool({
-    connectionString: process.env.DATABASE_URL as string,
+  connectionString: process.env.DATABASE_URL as string,
 });
 if (!process.env.DATABASE_URL) {
-    throw new Error('DATABASE_URL is not set in environment; cannot initialize DB connection');
+  throw new Error(
+    'DATABASE_URL is not set in environment; cannot initialize DB connection'
+  );
 }
 
 // Provide the compiled schema to drizzle so runtime queries match the

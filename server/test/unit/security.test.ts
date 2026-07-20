@@ -1,7 +1,7 @@
 /**
  * Unit tests for security utilities
  * Tests password hashing, comparison, API key generation, and JWT token handling
- * 
+ *
  * @group unit
  * @group security
  */
@@ -14,7 +14,7 @@ import {
   generateApiKey,
   hashApiKey,
   generateJWTToken,
-  JWTPayload
+  JWTPayload,
 } from '../../src/utils/security';
 import jwt from 'jsonwebtoken';
 
@@ -45,7 +45,7 @@ describe('Security Utils - Password Hashing', () => {
     it('should use provided salt when given', () => {
       const password = 'MyPassword123!';
       const customSalt = '$2a$10$abcdefghijklmnopqrstuv';
-      
+
       const result1 = hashPassword(password, customSalt);
       const result2 = hashPassword(password, customSalt);
 
@@ -57,7 +57,7 @@ describe('Security Utils - Password Hashing', () => {
 
     it('should handle empty password', () => {
       const result = hashPassword('');
-      
+
       expect(result.hashedPassword).toBeDefined();
       expect(result.salt).toBeDefined();
     });
@@ -122,8 +122,16 @@ describe('Security Utils - Password Hashing', () => {
       const password = 'CaseSensitive123!';
       const { hashedPassword, salt } = hashPassword(password);
 
-      const resultLower = comparePassword('casesensitive123!', hashedPassword, salt);
-      const resultUpper = comparePassword('CASESENSITIVE123!', hashedPassword, salt);
+      const resultLower = comparePassword(
+        'casesensitive123!',
+        hashedPassword,
+        salt
+      );
+      const resultUpper = comparePassword(
+        'CASESENSITIVE123!',
+        hashedPassword,
+        salt
+      );
 
       expect(resultLower).toBe(false);
       expect(resultUpper).toBe(false);
@@ -161,7 +169,7 @@ describe('Security Utils - API Key Generation', () => {
 
     it('should generate keys of reasonable length', () => {
       const apiKey = generateApiKey();
-      
+
       // Bcrypt salt without slashes should be around 20+ chars
       expect(apiKey.length).toBeGreaterThan(15);
       expect(apiKey.length).toBeLessThan(50);
@@ -189,7 +197,7 @@ describe('Security Utils - API Key Generation', () => {
 
     it('should handle empty API key', () => {
       const hashed = hashApiKey('');
-      
+
       expect(hashed).toBeDefined();
       expect(typeof hashed).toBe('string');
     });
@@ -207,7 +215,7 @@ describe('Security Utils - JWT Token Generation', () => {
   describe('generateJWTToken', () => {
     const validPayload: JWTPayload = {
       id: 123,
-      email: 'test@example.com'
+      email: 'test@example.com',
     };
 
     it('should generate a valid JWT token', () => {
@@ -215,7 +223,7 @@ describe('Security Utils - JWT Token Generation', () => {
 
       expect(token).toBeDefined();
       expect(typeof token).toBe('string');
-      
+
       // JWT format: header.payload.signature
       const parts = token.split('.');
       expect(parts).toHaveLength(3);
@@ -224,7 +232,7 @@ describe('Security Utils - JWT Token Generation', () => {
     it('should include payload data in token', () => {
       const payload: JWTPayload = {
         id: 456,
-        email: 'user@test.com'
+        email: 'user@test.com',
       };
 
       const token = generateJWTToken(payload);
@@ -240,7 +248,7 @@ describe('Security Utils - JWT Token Generation', () => {
 
       expect(decoded.exp).toBeDefined();
       expect(typeof decoded.exp).toBe('number');
-      
+
       // Token should expire in the future
       const now = Math.floor(Date.now() / 1000);
       expect(decoded.exp).toBeGreaterThan(now);
@@ -298,7 +306,7 @@ describe('Security Utils - JWT Token Generation', () => {
     it('should handle email with special characters', () => {
       const payload: JWTPayload = {
         id: 1,
-        email: 'user+test@sub-domain.example.com'
+        email: 'user+test@sub-domain.example.com',
       };
 
       const token = generateJWTToken(payload);
@@ -312,16 +320,20 @@ describe('Security Utils - JWT Token Generation', () => {
 describe('Security Utils - Integration Tests', () => {
   it('should support full password lifecycle', () => {
     const originalPassword = 'UserPassword123!';
-    
+
     // 1. Hash password
     const { hashedPassword, salt } = hashPassword(originalPassword);
-    
+
     // 2. Verify correct password
     const isValid = comparePassword(originalPassword, hashedPassword, salt);
     expect(isValid).toBe(true);
-    
+
     // 3. Reject wrong password
-    const isInvalid = comparePassword('WrongPassword456!', hashedPassword, salt);
+    const isInvalid = comparePassword(
+      'WrongPassword456!',
+      hashedPassword,
+      salt
+    );
     expect(isInvalid).toBe(false);
   });
 
@@ -329,7 +341,7 @@ describe('Security Utils - Integration Tests', () => {
     // 1. Generate API key
     const apiKey = generateApiKey();
     expect(apiKey).toBeDefined();
-    
+
     // 2. Hash API key for storage
     const hashedKey = hashApiKey(apiKey);
     expect(hashedKey).toBeDefined();
@@ -339,11 +351,11 @@ describe('Security Utils - Integration Tests', () => {
   it('should support full JWT lifecycle', () => {
     const payload: JWTPayload = { id: 789, email: 'jwt@test.com' };
     const secret = process.env.ACCESS_TOKEN_SECRET!;
-    
+
     // 1. Generate token
     const token = generateJWTToken(payload);
     expect(token).toBeDefined();
-    
+
     // 2. Verify and decode token
     const decoded = jwt.verify(token, secret) as JWTPayload;
     expect(decoded.id).toBe(payload.id);

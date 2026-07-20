@@ -2,7 +2,7 @@
  * Unit tests for Tenant Repository
  * Tests CRUD operations with mock implementation
  */
-import {describe, it, expect, beforeEach, afterEach} from '@jest/globals';
+import { describe, it, expect, beforeEach, afterEach } from '@jest/globals';
 import { MockTenantRepository } from '../../mocks/mockTenantRepository';
 import { NewTenant, Tenant } from '../../../src/modules/tenant/schema';
 import { randomEmail, generateStrongPassword } from '../../helpers/testHelpers';
@@ -25,7 +25,7 @@ describe('TenantRepository', () => {
       const email = randomEmail();
       const password = generateStrongPassword();
       const { hashedPassword, salt } = hashPassword(password);
-      
+
       const newTenant: NewTenant = {
         name: 'Test Tenant',
         email,
@@ -176,14 +176,14 @@ describe('TenantRepository', () => {
       // Arrange
       const email1 = randomEmail();
       const email2 = randomEmail();
-      
+
       await repository.createTenant({
         name: 'Tenant 1',
         email: email1,
         password: 'password1',
         salt: 'salt1',
       });
-      
+
       const tenant2 = await repository.createTenant({
         name: 'Tenant 2',
         email: email2,
@@ -238,7 +238,7 @@ describe('TenantRepository', () => {
         password: 'password1',
         salt: 'salt1',
       });
-      
+
       const tenant2 = await repository.createTenant({
         name: 'Tenant 2',
         email: randomEmail(),
@@ -334,7 +334,7 @@ describe('TenantRepository', () => {
       const originalUpdatedAt = created.updated_at;
 
       // Wait a small amount to ensure timestamp difference
-      await new Promise(resolve => setTimeout(resolve, 10));
+      await new Promise((resolve) => setTimeout(resolve, 10));
 
       // Act
       const updated = await repository.updateTenant(created.id, {

@@ -7,12 +7,13 @@ import { expect } from '@jest/globals';
 
 // waite for specified milliseconds
 export const wait = (ms: number): Promise<void> => {
-  return new Promise(resolve => setTimeout(resolve, ms));
+  return new Promise((resolve) => setTimeout(resolve, ms));
 };
 
 // generate a random string of specified length
 export const randomString = (length: number = 10): string => {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  const chars =
+    'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
   let result = '';
   for (let i = 0; i < length; i++) {
     result += chars.charAt(Math.floor(Math.random() * chars.length));
@@ -31,7 +32,7 @@ export const generateStrongPassword = (): string => {
   const lowercase = 'abcdefghijklmnopqrstuvwxyz';
   const numbers = '0123456789';
   const special = '!@#$%^&*';
-  
+
   return (
     uppercase[Math.floor(Math.random() * uppercase.length)] +
     lowercase.substring(0, 5) +
@@ -47,7 +48,7 @@ export const createTestUser = (overrides?: any) => {
     name: 'Test User',
     email: randomEmail(),
     password: generateStrongPassword(),
-    ...overrides
+    ...overrides,
   };
 };
 
@@ -57,7 +58,7 @@ export const createTestTenant = (overrides?: any) => {
     name: `Test Tenant ${randomString(5)}`,
     email: randomEmail(),
     password: generateStrongPassword(),
-    ...overrides
+    ...overrides,
   };
 };
 
@@ -105,12 +106,12 @@ export const withEnv = <T>(
   fn: () => T
 ): T => {
   const original: Record<string, string | undefined> = {};
-  
+
   // Save original values
-  Object.keys(envVars).forEach(key => {
+  Object.keys(envVars).forEach((key) => {
     original[key] = process.env[key];
   });
-  
+
   // Set new values
   Object.entries(envVars).forEach(([key, value]) => {
     if (value === undefined) {
@@ -119,7 +120,7 @@ export const withEnv = <T>(
       process.env[key] = value;
     }
   });
-  
+
   try {
     return fn();
   } finally {
@@ -140,12 +141,12 @@ export const withEnvAsync = async <T>(
   fn: () => Promise<T>
 ): Promise<T> => {
   const original: Record<string, string | undefined> = {};
-  
+
   // Save original values
-  Object.keys(envVars).forEach(key => {
+  Object.keys(envVars).forEach((key) => {
     original[key] = process.env[key];
   });
-  
+
   // Set new values
   Object.entries(envVars).forEach(([key, value]) => {
     if (value === undefined) {
@@ -154,7 +155,7 @@ export const withEnvAsync = async <T>(
       process.env[key] = value;
     }
   });
-  
+
   try {
     return await fn();
   } finally {
