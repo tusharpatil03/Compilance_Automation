@@ -38,8 +38,8 @@ jobs:
 
       - name: Lint
         working-directory: ${{ matrix.app }}
-        run: pnpm lint --if-present
+        run: pnpm run --if-present lint
 
       - name: Test
         working-directory: ${{ matrix.app }}
-        run: pnpm test --if-present
+        run: pnpm run --if-present test
