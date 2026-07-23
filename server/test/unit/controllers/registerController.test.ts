@@ -110,6 +110,7 @@ describe('Register Controller', () => {
       expect(mockStatus).toHaveBeenCalledWith(201);
       expect(mockJson).toHaveBeenCalledWith({
         success: true,
+        status: 201,
         message: 'Tenant registered successfully',
         data: {
           tenant: mockTenantResponse,
@@ -153,7 +154,7 @@ describe('Register Controller', () => {
       await registerTenant(mockRequest as Request, mockResponse as Response);
 
       // Assert
-      expect(mockRegister).toHaveBeenCalledWith({
+      expect(mockRegister).toHaveBeenCalledWith(expect.any(Object), {
         name,
         email,
         password,
@@ -266,7 +267,13 @@ describe('Register Controller', () => {
       expect(mockStatus).toHaveBeenCalledWith(409);
       expect(mockJson).toHaveBeenCalledWith({
         success: false,
-        message: 'Tenant already exists with this email',
+        status: 409,
+        message: "Tenant with email 'existing@example.com' already exists",
+        error: {
+          type: 'CONFLICT',
+          code: 'ERR_409_TENANT_EXISTS',
+          field: 'email',
+        },
       });
     });
 
@@ -295,8 +302,12 @@ describe('Register Controller', () => {
       expect(mockStatus).toHaveBeenCalledWith(500);
       expect(mockJson).toHaveBeenCalledWith({
         success: false,
+        status: 500,
         message: 'Error registering tenant',
-        error: 'Database connection failed',
+        error: {
+          type: 'SERVER_ERROR',
+          code: 'ERR_500_INTERNAL_ERROR',
+        },
       });
     });
 
@@ -325,8 +336,12 @@ describe('Register Controller', () => {
       expect(mockStatus).toHaveBeenCalledWith(500);
       expect(mockJson).toHaveBeenCalledWith({
         success: false,
+        status: 500,
         message: 'Error registering tenant',
-        error: 'String error',
+        error: {
+          type: 'SERVER_ERROR',
+          code: 'ERR_500_INTERNAL_ERROR',
+        },
       });
     });
 
@@ -334,7 +349,7 @@ describe('Register Controller', () => {
       // Arrange
       const consoleErrorSpy = jest
         .spyOn(console, 'error')
-        .mockImplementation(() => {});
+        .mockImplementation(() => { });
 
       mockRequest.body = {
         name: 'Test Company',
@@ -508,8 +523,8 @@ describe('Register Controller', () => {
       await registerTenant(mockRequest as Request, mockResponse as Response);
 
       // Assert
-      expect(TenantRepository).toHaveBeenCalled();
       expect(AuthService).toHaveBeenCalled();
+      expect(mockRegister).toHaveBeenCalled();
     });
   });
 });

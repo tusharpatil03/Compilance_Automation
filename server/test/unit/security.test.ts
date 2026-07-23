@@ -170,9 +170,7 @@ describe('Security Utils - API Key Generation', () => {
     it('should generate keys of reasonable length', () => {
       const apiKey = generateApiKey();
 
-      // Bcrypt salt without slashes should be around 20+ chars
-      expect(apiKey.length).toBeGreaterThan(15);
-      expect(apiKey.length).toBeLessThan(50);
+      expect(apiKey.length).toBe(64);
     });
   });
 

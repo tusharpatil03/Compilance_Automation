@@ -24,10 +24,12 @@ describe('Login Controller', () => {
   let mockResponse: Partial<Response>;
   let mockJson: jest.Mock;
   let mockStatus: jest.Mock;
+  let mockCookie: jest.Mock;
 
   beforeEach(() => {
     mockJson = jest.fn();
     mockStatus = jest.fn().mockReturnValue({ json: mockJson });
+    mockCookie = jest.fn();
 
     mockRequest = {
       body: {},
@@ -36,6 +38,7 @@ describe('Login Controller', () => {
     mockResponse = {
       status: mockStatus as any,
       json: mockJson as any,
+      cookie: mockCookie as any,
     };
 
     jest.clearAllMocks();
@@ -83,6 +86,7 @@ describe('Login Controller', () => {
       expect(mockStatus).toHaveBeenCalledWith(200);
       expect(mockJson).toHaveBeenCalledWith({
         success: true,
+        status: 200,
         message: 'Login successful',
         data: {
           tenant: mockTenantResponse,
@@ -125,7 +129,10 @@ describe('Login Controller', () => {
       await loginTenant(mockRequest as Request, mockResponse as Response);
 
       // Assert
-      expect(mockLoginTenant).toHaveBeenCalledWith({ email, password });
+      expect(mockLoginTenant).toHaveBeenCalledWith(expect.any(Object), {
+        email,
+        password,
+      });
     });
 
     it('should return tenant without password or salt', async () => {
@@ -230,7 +237,12 @@ describe('Login Controller', () => {
       expect(mockStatus).toHaveBeenCalledWith(401);
       expect(mockJson).toHaveBeenCalledWith({
         success: false,
+        status: 401,
         message: 'Invalid email or password',
+        error: {
+          type: 'AUTH_ERROR',
+          code: 'ERR_401_INVALID_CREDENTIALS',
+        },
       });
     });
 
@@ -259,7 +271,12 @@ describe('Login Controller', () => {
       expect(mockStatus).toHaveBeenCalledWith(403);
       expect(mockJson).toHaveBeenCalledWith({
         success: false,
-        message: 'Tenant account is suspended or inactive',
+        status: 403,
+        message: 'Tenant account is not active',
+        error: {
+          type: 'FORBIDDEN',
+          code: 'ERR_403_FORBIDDEN',
+        },
       });
     });
 
@@ -288,8 +305,12 @@ describe('Login Controller', () => {
       expect(mockStatus).toHaveBeenCalledWith(500);
       expect(mockJson).toHaveBeenCalledWith({
         success: false,
-        message: 'Unable to login',
-        error: 'Database connection failed',
+        status: 500,
+        message: 'Error logging in tenant',
+        error: {
+          type: 'SERVER_ERROR',
+          code: 'ERR_500_INTERNAL_ERROR',
+        },
       });
     });
 
@@ -318,8 +339,12 @@ describe('Login Controller', () => {
       expect(mockStatus).toHaveBeenCalledWith(500);
       expect(mockJson).toHaveBeenCalledWith({
         success: false,
-        message: 'Unable to login',
-        error: 'String error',
+        status: 500,
+        message: 'Error logging in tenant',
+        error: {
+          type: 'SERVER_ERROR',
+          code: 'ERR_500_INTERNAL_ERROR',
+        },
       });
     });
 
@@ -327,7 +352,7 @@ describe('Login Controller', () => {
       // Arrange
       const consoleErrorSpy = jest
         .spyOn(console, 'error')
-        .mockImplementation(() => {});
+        .mockImplementation(() => { });
 
       mockRequest.body = {
         email: randomEmail(),
@@ -581,8 +606,8 @@ describe('Login Controller', () => {
       await loginTenant(mockRequest as Request, mockResponse as Response);
 
       // Assert
-      expect(TenantRepository).toHaveBeenCalled();
       expect(AuthService).toHaveBeenCalled();
+      expect(mockLoginTenant).toHaveBeenCalled();
     });
   });
 

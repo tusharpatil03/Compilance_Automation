@@ -56,7 +56,7 @@ export const loginTenant = async (
           new ApiError(
             ErrorCode.INVALID_CREDENTIALS,
             'Invalid email or password',
-            undefined
+            401
           )
         );
       }
