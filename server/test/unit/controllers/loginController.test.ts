@@ -352,7 +352,7 @@ describe('Login Controller', () => {
       // Arrange
       const consoleErrorSpy = jest
         .spyOn(console, 'error')
-        .mockImplementation(() => { });
+        .mockImplementation(() => {});
 
       mockRequest.body = {
         email: randomEmail(),

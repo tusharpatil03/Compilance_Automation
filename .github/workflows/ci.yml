@@ -82,3 +82,46 @@ jobs:
       - name: Deploy prebuilt artifacts
         working-directory: client
         run: vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
+
+  migrate:
+    name: Run production migrations
+    needs: ci
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "pnpm"
+          cache-dependency-path: server/pnpm-lock.yaml
+
+      - name: Install dependencies
+        working-directory: server
+        run: pnpm install --frozen-lockfile
+
+      - name: Write .env.production for drizzle.config.ts
+        working-directory: server
+        run: echo "DATABASE_URL=${{ secrets.NEON_DATABASE_URL }}" > .env.production
+
+      - name: verify .env.production
+        working-directory: server
+        run: cat .env.production
+
+      - name: Run Drizzle generate command to create migration files
+        working-directory: server
+        run: pnpm run db:generate
+
+      - name: Run Drizzle migrations against Neon
+        working-directory: server
+        run: pnpm run db:migrate:prod

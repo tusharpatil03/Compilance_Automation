@@ -349,7 +349,7 @@ describe('Register Controller', () => {
       // Arrange
       const consoleErrorSpy = jest
         .spyOn(console, 'error')
-        .mockImplementation(() => { });
+        .mockImplementation(() => {});
 
       mockRequest.body = {
         name: 'Test Company',

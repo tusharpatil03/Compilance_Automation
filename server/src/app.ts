@@ -1,5 +1,4 @@
 import express from 'express';
-import 'dotenv/config';
 import userRouter from './modules/customer/routes';
 import cors from 'cors';
 import tenantRoutes from './modules/tenant/routes';
@@ -49,10 +48,12 @@ app.use((req, res) => {
 //bullmq arena
 
 // Arena config
+// Cast the BullMQ-related values to `any` to satisfy the @types/bull-arena
+// definitions which can be incompatible with the bullmq v5 types.
 const arenaConfig = Arena(
   {
-    BullMQ: Queue,
-    FlowBullMQ: FlowProducer,
+    BullMQ: Queue as unknown as any,
+    FlowBullMQ: FlowProducer as unknown as any,
     queues: [
       {
         name: 'domain-events',
@@ -64,13 +65,13 @@ const arenaConfig = Arena(
         },
       },
     ],
-  },
+  } as any,
   {
     basePath: '/arena',
     disableListen: true,
   }
 );
 
-app.use('/', arenaConfig);
+app.use('/', arenaConfig as any);
 
 export default app;
