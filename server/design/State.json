@@ -1,0 +1,246 @@
+{
+  "_meta": {
+    "module": "Identity Management",
+    "source": "FR_Compliance_Automation.docx",
+    "format": "XState-v5-compatible statechart config — paste any single machine into https://stately.ai/viz to render/edit visually, or import directly with xstate's createMachine() in the service layer.",
+    "note": "Machines marked proposed: true fill gaps flagged in Section 7 of the source doc (FR-IDM-013, 014, 017, 018) and should be confirmed with stakeholders before being treated as final."
+  },
+
+  "identityAccountStatus": {
+    "id": "identityAccountStatus",
+    "db_column": "identities.account_status",
+    "related_fr": ["FR-IDM-001", "FR-IDM-002"],
+    "proposed": false,
+    "initial": "REGISTERED",
+    "states": {
+      "REGISTERED": {
+        "on": {
+          "OTP_VERIFIED": { "target": "ACTIVE", "fr": "FR-IDM-001/002" }
+        }
+      },
+      "ACTIVE": {
+        "on": {
+          "SUSPEND": { "target": "SUSPENDED", "actor": "Administrator" },
+          "DEACTIVATE": {
+            "target": "DEACTIVATED",
+            "actor": ["User", "Administrator"]
+          }
+        }
+      },
+      "SUSPENDED": {
+        "on": {
+          "REINSTATE": { "target": "ACTIVE", "actor": "Administrator" },
+          "DEACTIVATE": { "target": "DEACTIVATED", "actor": "Administrator" }
+        }
+      },
+      "DEACTIVATED": { "type": "final" }
+    }
+  },
+
+  "identityVerificationStatus": {
+    "id": "identityVerificationStatus",
+    "db_column": "identities.verification_status",
+    "related_fr": ["FR-IDM-008", "FR-IDM-009", "FR-IDM-018"],
+    "proposed": true,
+    "proposed_reason": "FR-IDM-018 (Identity Status Tracking) is a heading-only gap in the source doc. This machine is one reasonable design; confirm status values/transitions with stakeholders.",
+    "initial": "UNVERIFIED",
+    "states": {
+      "UNVERIFIED": {
+        "on": {
+          "VERIFICATION_STARTED": {
+            "target": "IN_PROGRESS",
+            "fr": "FR-IDM-008"
+          }
+        }
+      },
+      "IN_PROGRESS": {
+        "on": {
+          "VERIFICATION_APPROVED": { "target": "VERIFIED", "fr": "FR-IDM-009" },
+          "VERIFICATION_REJECTED": { "target": "REJECTED", "fr": "FR-IDM-009" }
+        }
+      },
+      "VERIFIED": {
+        "on": {
+          "REVERIFICATION_REQUIRED": {
+            "target": "EXPIRED",
+            "guard": "policy-driven, e.g. document expiry"
+          }
+        }
+      },
+      "REJECTED": {
+        "on": {
+          "RESUBMIT": { "target": "IN_PROGRESS" }
+        }
+      },
+      "EXPIRED": {
+        "on": {
+          "VERIFICATION_STARTED": { "target": "IN_PROGRESS" }
+        }
+      }
+    }
+  },
+
+  "documentVersionStatus": {
+    "id": "documentVersionStatus",
+    "db_column": "document_versions.status",
+    "related_fr": ["FR-IDM-005", "FR-IDM-006", "FR-IDM-007"],
+    "proposed": false,
+    "initial": "UPLOADED",
+    "states": {
+      "UPLOADED": {
+        "on": {
+          "OCR_STARTED": { "target": "PROCESSING", "fr": "FR-IDM-007" }
+        }
+      },
+      "PROCESSING": {
+        "on": {
+          "OCR_COMPLETED": { "target": "EXTRACTED", "fr": "FR-IDM-007" }
+        }
+      },
+      "EXTRACTED": {
+        "on": {
+          "VERIFICATION_APPROVED": { "target": "VERIFIED", "fr": "FR-IDM-008" },
+          "VERIFICATION_REJECTED": { "target": "REJECTED", "fr": "FR-IDM-008" }
+        }
+      },
+      "VERIFIED": { "type": "final" },
+      "REJECTED": {
+        "on": {
+          "REPLACED": { "target": "SUPERSEDED", "fr": "FR-IDM-005" }
+        }
+      },
+      "SUPERSEDED": { "type": "final" }
+    }
+  },
+
+  "verificationPipeline": {
+    "id": "verificationPipeline",
+    "db_column": "verifications.status",
+    "related_fr": ["FR-IDM-008", "FR-IDM-009"],
+    "proposed": false,
+    "note": "Each stage below also has its own PENDING/PASSED/FAILED/SKIPPED result stored in verification_stage_results, keyed by (verification_id, stage). This machine is the aggregate/outer status.",
+    "initial": "PENDING",
+    "context": {
+      "stages": [
+        "FORMAT_CHECK",
+        "GOVERNMENT_VERIFICATION",
+        "FACE_MATCH",
+        "LIVENESS_DETECTION"
+      ]
+    },
+    "states": {
+      "PENDING": {
+        "on": {
+          "STAGE_STARTED": { "target": "IN_PROGRESS" }
+        }
+      },
+      "IN_PROGRESS": {
+        "on": {
+          "ALL_STAGES_PASSED": {
+            "target": "APPROVED",
+            "guard": "every stage result == PASSED"
+          },
+          "STAGE_FAILED_HARD": {
+            "target": "REJECTED",
+            "guard": "policy: hard-fail stage (e.g. liveness) failed"
+          },
+          "STAGE_FAILED_SOFT": {
+            "target": "MANUAL_REVIEW",
+            "guard": "policy: soft-fail stage failed, or ambiguous match"
+          }
+        }
+      },
+      "APPROVED": {
+        "type": "final",
+        "fires": "FR-IDM-009 notification + identityVerificationStatus.VERIFICATION_APPROVED"
+      },
+      "REJECTED": {
+        "type": "final",
+        "fires": "FR-IDM-009 notification + identityVerificationStatus.VERIFICATION_REJECTED"
+      },
+      "MANUAL_REVIEW": {
+        "on": {
+          "REVIEW_APPROVED": { "target": "APPROVED", "actor": "Administrator" },
+          "REVIEW_REJECTED": { "target": "REJECTED", "actor": "Administrator" }
+        }
+      }
+    }
+  },
+
+  "verificationStageResult": {
+    "id": "verificationStageResult",
+    "db_column": "verification_stage_results.result",
+    "related_fr": ["FR-IDM-008"],
+    "proposed": false,
+    "initial": "PENDING",
+    "states": {
+      "PENDING": {
+        "on": {
+          "RUN": { "target": "RUNNING" },
+          "SKIP": { "target": "SKIPPED" }
+        }
+      },
+      "RUNNING": {
+        "on": {
+          "PASS": { "target": "PASSED" },
+          "FAIL": { "target": "FAILED" }
+        }
+      },
+      "PASSED": { "type": "final" },
+      "FAILED": { "type": "final" },
+      "SKIPPED": { "type": "final" }
+    }
+  },
+
+  "amlScreeningStatus": {
+    "id": "amlScreeningStatus",
+    "db_column": "aml_screenings.status",
+    "related_fr": ["FR-IDM-013"],
+    "proposed": true,
+    "proposed_reason": "FR-IDM-013 is a heading-only gap in the source doc (no inputs, screening logic, or outputs specified). This machine is a proposal pending stakeholder input.",
+    "initial": "NOT_SCREENED",
+    "states": {
+      "NOT_SCREENED": {
+        "on": {
+          "SCREENING_STARTED": { "target": "SCREENING" }
+        }
+      },
+      "SCREENING": {
+        "on": {
+          "NO_MATCH": { "target": "CLEAR" },
+          "MATCH_FOUND": { "target": "POTENTIAL_MATCH" }
+        }
+      },
+      "CLEAR": {
+        "on": {
+          "RESCREEN": {
+            "target": "SCREENING",
+            "guard": "periodic or event-driven rescreen policy"
+          }
+        }
+      },
+      "POTENTIAL_MATCH": {
+        "on": {
+          "CONFIRM_MATCH": {
+            "target": "CONFIRMED_MATCH",
+            "actor": "Administrator"
+          },
+          "MARK_FALSE_POSITIVE": {
+            "target": "FALSE_POSITIVE",
+            "actor": "Administrator"
+          }
+        }
+      },
+      "CONFIRMED_MATCH": {
+        "on": {
+          "RESCREEN": { "target": "SCREENING" }
+        }
+      },
+      "FALSE_POSITIVE": {
+        "on": {
+          "RESCREEN": { "target": "SCREENING" }
+        }
+      }
+    }
+  }
+}
