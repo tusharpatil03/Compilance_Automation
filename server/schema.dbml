@@ -1,3 +1,61 @@
+enum tenant_status {
+  active
+  inactive
+  suspended
+}
+
+enum apikey_status {
+  active
+  inactive
+  revoked
+}
+
+enum account_status {
+  REGISTERED
+  ACTIVE
+  SUSPENDED
+  DEACTIVATED
+}
+
+enum identity_verification_status {
+  UNVERIFIED
+  IN_PROGRESS
+  VERIFIED
+  REJECTED
+  EXPIRED
+}
+
+enum document_status {
+  UPLOADED
+  PROCESSING
+  EXTRACTED
+  VERIFIED
+  REJECTED
+  SUPERSEDED
+}
+
+enum verification_stage {
+  FORMAT_CHECK
+  GOVERNMENT_VERIFICATION
+  FACE_MATCH
+  LIVENESS_DETECTION
+}
+
+enum verification_status {
+  PENDING
+  IN_PROGRESS
+  APPROVED
+  REJECTED
+  MANUAL_REVIEW
+}
+
+enum stage_result {
+  PENDING
+  PASSED
+  FAILED
+  SKIPPED
+}
+
 table identities {
   id uuid [pk, not null, default: `gen_random_uuid()`]
   email varchar(255)

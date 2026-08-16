@@ -1,5 +1,5 @@
-import schema from './schema'; // Import your schema definition
-import { pgGenerate } from 'drizzle-dbml-generator'; // Using Postgres
+import * as schema from './schema';
+import { pgGenerate } from 'drizzle-dbml-generator';
 
 const out = './schema.dbml';
 const relational = false;
