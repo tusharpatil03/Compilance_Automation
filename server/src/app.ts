@@ -1,5 +1,5 @@
 import express from 'express';
-import userRouter from './modules/customer/routes';
+import identityRouter from './modules/identity/routes';
 import cors from 'cors';
 import tenantRoutes from './modules/tenant/routes';
 import eventTestRoutes from './Event/testRoute';
@@ -33,7 +33,7 @@ app.use(
 //cookie parser
 app.use(cookieParser());
 
-app.use('/user', userRouter);
+app.use('/identities', identityRouter);
 app.use('/tenant', tenantRoutes);
 app.use('/event', eventTestRoutes);
 
