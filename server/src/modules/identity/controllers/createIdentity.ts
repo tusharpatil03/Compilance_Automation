@@ -7,16 +7,25 @@ import {
     sendSuccessResponse,
 } from '../../../utils/errorHandler';
 import { ErrorCode } from '../../../utils/APIContract';
-import { IdentityServices } from '../services/IdentityServices';
+import IndentityServices from '../services';
 import { type RegisterIdentityInput } from '../zodschema';
 
-export function createIdentity(req: Request, res: Response) {
+export async function createIdentity(req: Request, res: Response) {
     try {
-        const uow: UnitOfWork = new DrizzleUnitOfWork(db);
-        const identityServices = new IdentityServices();
-
         const data: RegisterIdentityInput = req.body;
-        const result = identityServices.registerIdentity(
+
+        if (!data.email && !data.phone_number) {
+            throw new ApiError(
+                ErrorCode.MISSING_REQUIRED_FIELD,
+                'Either email or phone_number is required',
+                400,
+                'email'
+            );
+        }
+
+        const uow: UnitOfWork = new DrizzleUnitOfWork(db);
+
+        const result = await IndentityServices.registerIdentity(
             uow,
             data
         );
