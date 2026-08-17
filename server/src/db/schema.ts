@@ -1,56 +1,50 @@
 import {
-  tenants,
-  tenants_api_key,
-  TenantStatus,
-  webhooks,
-  ApiKeyStatus,
+    tenantSchema,
+    TenantStatus,
+    tenants,
+    tenants_api_key,
+    webhooks,
+    ApiKeyStatus,
 } from '../modules/tenant/schema';
 import {
-  identities,
-  identityProfiles,
-  identityProfileHistory,
-  identityStatusHistory,
-  credentials,
-  otpCodes,
-  sessions,
-  documents,
-  documentVersions,
-  documentExtractions,
-  verifications,
-  verificationStageResults,
-  accountStatusEnum,
-  identityVerificationStatusEnum,
-  documentStatusEnum,
-  verificationStageEnum,
-  verificationStatusEnum,
-  stageResultEnum,
+    identitySchema,
+    accountStatusEnum,
+    identities,
+    identityProfiles,
+    identityProfileHistory,
+    identityStatusHistory,
+    credentials,
+    otpCodes,
+    sessions,
+    documents,
+    documentVersions,
+    documentExtractions,
+    verifications,
+    verificationStageResults,
+    identityVerificationStatusEnum,
+    documentStatusEnum,
+    verificationStageEnum,
+    verificationStatusEnum,
+    stageResultEnum,
+    otpPurposeEnum,
+    otpChannelEnum,
+    tokenTypeEnum,
 } from '../modules/identity/schema';
-import { event_store, outbox } from '../Event/Repository/schema';
+import { eventSchema, event_store, outbox } from '../Event/Repository/schema';
 
 // Central schema object for Drizzle initialization
 const schema = {
-  identities,
-  identityProfiles,
-  identityProfileHistory,
-  identityStatusHistory,
-  credentials,
-  otpCodes,
-  sessions,
-  tenants,
-  tenants_api_key,
-  event_store,
-  outbox,
-  webhooks,
-  documents,
-  documentVersions,
-  documentExtractions,
-  verifications,
-  verificationStageResults,
+    ...identitySchema,
+    ...tenantSchema,
+    ...eventSchema,
 };
 
 export default schema;
 
 //dirzzle will track these exports
+export { identitySchema };
+export { tenantSchema };
+export { eventSchema };
 export { identities };
 export { identityProfiles };
 export { identityProfileHistory };
@@ -76,5 +70,8 @@ export { documentStatusEnum };
 export { verificationStageEnum };
 export { verificationStatusEnum };
 export { stageResultEnum };
+export { otpPurposeEnum };
+export { otpChannelEnum };
+export { tokenTypeEnum };
 
 export type AppSchema = typeof schema;

@@ -53,3 +53,8 @@ export const outbox = pgTable(
 
 export type OutboxRecord = typeof outbox.$inferSelect;
 export type NewOutboxRecord = typeof outbox.$inferInsert;
+
+export const eventSchema = {
+  event_store,
+  outbox,
+};

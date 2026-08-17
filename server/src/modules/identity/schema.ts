@@ -300,3 +300,27 @@ export const verificationStageResults = pgTable(
 export type VerificationStageResult = typeof verificationStageResults.$inferSelect;
 export type NewVerificationStageResult =
     typeof verificationStageResults.$inferInsert;
+
+export const identitySchema = {
+    accountStatusEnum,
+    identityVerificationStatusEnum,
+    documentStatusEnum,
+    verificationStageEnum,
+    verificationStatusEnum,
+    stageResultEnum,
+    otpPurposeEnum,
+    otpChannelEnum,
+    tokenTypeEnum,
+    identities,
+    identityProfiles,
+    identityProfileHistory,
+    identityStatusHistory,
+    credentials,
+    otpCodes,
+    sessions,
+    documents,
+    documentVersions,
+    documentExtractions,
+    verifications,
+    verificationStageResults,
+};

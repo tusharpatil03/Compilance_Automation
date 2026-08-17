@@ -108,3 +108,11 @@ export const webhooks = pgTable('webhooks', {
 
 export type Webhook = typeof webhooks.$inferSelect;
 export type NewWebhook = typeof webhooks.$inferInsert;
+
+export const tenantSchema = {
+  TenantStatus,
+  ApiKeyStatus,
+  tenants,
+  tenants_api_key,
+  webhooks,
+};

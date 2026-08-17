@@ -1,1 +1,0 @@
-ALTER TABLE "webhooks" ALTER COLUMN "events" DROP NOT NULL;

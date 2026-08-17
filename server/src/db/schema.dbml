@@ -56,6 +56,22 @@ enum stage_result {
   SKIPPED
 }
 
+enum otp_purpose {
+  REGISTRATION
+  LOGIN
+  PASSWORD_RESET
+}
+
+enum otp_channel {
+  EMAIL
+  SMS
+}
+
+enum token_type {
+  JWT
+  PASETO
+}
+
 table identities {
   id uuid [pk, not null, default: `gen_random_uuid()`]
   email varchar(255)

@@ -13,7 +13,7 @@
     "db:generate": "pnpm exec drizzle-kit generate --config ./drizzle.config.ts",
     "db:migrate": "NODE_ENV=development pnpm exec drizzle-kit migrate --config ./drizzle.config.ts",
     "db:migrate:prod": "NODE_ENV=production pnpm exec drizzle-kit migrate --config ./drizzle.config.ts",
-    "db:generate-dbml": "ts-node src/db/dbml.ts",
+    "db:generate-dbml": "ts-node scripts/dbml.ts",
     "test": "jest",
     "test:watch": "jest --watch",
     "init": "tsx scripts/init.ts",
