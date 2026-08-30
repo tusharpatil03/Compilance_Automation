@@ -29,7 +29,7 @@ import {
     otpPurposeEnum,
     otpChannelEnum,
     tokenTypeEnum,
-} from '../modules/identity/schema';
+} from '../modules/identity/infrastructure/persistence/schema';
 import { eventSchema, event_store, outbox } from '../Event/Repository/schema';
 
 // Central schema object for Drizzle initialization

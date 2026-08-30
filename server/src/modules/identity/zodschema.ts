@@ -14,4 +14,16 @@ export const RegisterIdentity = z
         path: ['email'],
     });
 
+export const VerifyEmail = z.object({
+    identity_id: z.string().min(1, 'Identity id is required'),
+    code: z.string().min(1, 'Verification code is required'),
+});
+
+export const VerifyPhone = z.object({
+    identity_id: z.string().min(1, 'Identity id is required'),
+    code: z.string().min(1, 'Verification code is required'),
+});
+
 export type RegisterIdentityInput = z.infer<typeof RegisterIdentity>;
+export type VerifyEmailInput = z.infer<typeof VerifyEmail>;
+export type VerifyPhoneInput = z.infer<typeof VerifyPhone>;
